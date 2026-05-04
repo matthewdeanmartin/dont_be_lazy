@@ -1,6 +1,6 @@
 [project]
 name = "dont_be_lazy"
-version = "0.1.1"
+version = "0.1.2"
 description = "Tool that finds evidence of past skipped linting"
 readme = "README.md"
 authors = [{ name = "Matthew Martin", email = "matthewdeanmartin@gmail.com" }]
