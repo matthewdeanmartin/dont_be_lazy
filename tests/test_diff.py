@@ -32,3 +32,17 @@ def test_build_diff_index_only_keeps_changed_files(monkeypatch, tmp_path) -> Non
     index = build_diff_index("HEAD~1", [first, second], str(tmp_path))
 
     assert index == {first: [(3, 5)]}
+
+
+def test_build_diff_index_normalizes_git_pathspecs(monkeypatch, tmp_path) -> None:
+    seen: list[str] = []
+
+    def fake_diff_hunks_since(ref: str, path: str, cwd: str) -> list[tuple[int, int]]:
+        seen.append(path)
+        return [(1, 1)]
+
+    monkeypatch.setattr("dont_be_lazy.diff.diff_hunks_since", fake_diff_hunks_since)
+
+    build_diff_index("HEAD~1", [str(tmp_path / "src" / "a.py")], str(tmp_path))
+
+    assert seen == ["src/a.py"]
