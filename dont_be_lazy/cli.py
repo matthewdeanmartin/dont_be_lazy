@@ -463,7 +463,8 @@ def _run_scan(args: argparse.Namespace, root: str) -> int:
             f.write(output)
     else:
         if not args.quiet:
-            print(output, end="")
+            sys.stdout.buffer.write(output.encode("utf-8", errors="replace"))
+            sys.stdout.buffer.flush()
 
     # Exit code logic
     if args.fail_on:
@@ -582,7 +583,8 @@ def _run_config_suppressions(args: argparse.Namespace, root: str) -> int:
 
     output = _format_findings(findings, args.format_, root, no_color=getattr(args, "no_color", False))
     if not args.quiet:
-        print(output, end="")
+        sys.stdout.buffer.write(output.encode("utf-8", errors="replace"))
+        sys.stdout.buffer.flush()
     return 0
 
 
@@ -612,7 +614,8 @@ def _run_stale(args: argparse.Namespace, root: str) -> int:
     output = format_stale_json(stale) if fmt == "json" else format_stale_table(stale, group_by=group_by)
 
     if not args.quiet:
-        print(output, end="")
+        sys.stdout.buffer.write(output.encode("utf-8", errors="replace"))
+        sys.stdout.buffer.flush()
 
     return 1 if stale else 0
 
@@ -633,7 +636,8 @@ def _run_owners(args: argparse.Namespace, root: str) -> int:
         output = format_owners_table(findings, group_by=getattr(args, "group_by", "author"))
 
     if not args.quiet:
-        print(output, end="")
+        sys.stdout.buffer.write(output.encode("utf-8", errors="replace"))
+        sys.stdout.buffer.flush()
     return 0
 
 
@@ -691,7 +695,8 @@ def _run_baseline(args: argparse.Namespace, root: str) -> int:
                     fmt = getattr(args, "format_", "table")
                     output = format_check_result(new, len(known), fmt)
                     if not args.quiet:
-                        print(output, end="")
+                        sys.stdout.buffer.write(output.encode("utf-8", errors="replace"))
+                        sys.stdout.buffer.flush()
                     exit_code = 1 if new else 0
                 else:
                     pruned, removed = prune_baseline(baseline_data, findings)

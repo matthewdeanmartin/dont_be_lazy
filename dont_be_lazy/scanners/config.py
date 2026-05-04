@@ -343,9 +343,12 @@ def scan_toml(path: str) -> list[Suppression]:
 # ---------------------------------------------------------------------------
 
 
-def _read_ini(path: str) -> configparser.ConfigParser:
-    cp = configparser.ConfigParser()
-    cp.read(path, encoding="utf-8")
+def _read_ini(path: str) -> configparser.RawConfigParser:
+    cp = configparser.RawConfigParser()
+    try:
+        cp.read(path, encoding="utf-8")
+    except configparser.Error:
+        pass
     return cp
 
 
