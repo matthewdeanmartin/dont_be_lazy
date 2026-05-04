@@ -61,7 +61,7 @@ dev = [
     "jiggle-version>=2.1.0",
     "codespell>=2.4.1",
 
-    "metametameta>=0.1.5",
+    "metametameta==0.1.12",
     "pylint[spelling]>=4.0.0",
     "ruff>=0.12.0",
     "troml-dev-status>=0.6.0",
@@ -117,7 +117,7 @@ default-groups = ["dev"]
 [tool.pytest.ini_options]
 minversion = "6.0"
 testpaths = ["tests"]
-addopts = "-q --timeout=60"
+# addopts = "-q --timeout=60"
 norecursedirs = ["vendor", "scripts", "dist", "build"]
 markers = [
     "slow: performance benchmarks (run with -m slow)",

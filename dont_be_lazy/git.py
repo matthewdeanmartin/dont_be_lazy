@@ -6,7 +6,7 @@ import contextlib
 import re
 import shutil
 import subprocess  # nosec B404
-from datetime import datetime
+from datetime import datetime, timezone
 
 GIT_BIN = shutil.which("git") or "git"
 
@@ -50,7 +50,7 @@ def blame_line(path: str, line: int, cwd: str) -> dict[str, str] | None:
         elif ln.startswith("author-time "):
             ts = ln[len("author-time ") :].strip()
             with contextlib.suppress(ValueError):
-                info["date"] = datetime.utcfromtimestamp(int(ts)).strftime("%Y-%m-%d")
+                info["date"] = datetime.fromtimestamp(int(ts), tz=timezone.utc).strftime("%Y-%m-%d")
     return info if info else None
 
 
@@ -85,7 +85,7 @@ def blame_lines(path: str, lines: list[int], cwd: str) -> dict[int, dict[str, st
         elif ln.startswith("author-time "):
             ts = ln[12:].strip()
             with contextlib.suppress(ValueError):
-                current_info["date"] = datetime.utcfromtimestamp(int(ts)).strftime("%Y-%m-%d")
+                current_info["date"] = datetime.fromtimestamp(int(ts), tz=timezone.utc).strftime("%Y-%m-%d")
 
     if current_line in lines and current_info:
         result[current_line] = dict(current_info)

@@ -53,7 +53,7 @@ def format_json(findings: list[Suppression], root: str = "") -> str:
     doc = {
         "version": "1.0",
         "root": root,
-        "generated_at": datetime.datetime.utcnow().isoformat() + "Z",
+        "generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat() + "Z",
         "summary": {
             "total": len(findings),
             "by_tool": by_tool,

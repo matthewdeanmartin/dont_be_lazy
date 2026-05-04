@@ -832,7 +832,7 @@ dev = [
     { name = "jiggle-version", specifier = ">=2.1.0" },
     { name = "linkcheckmd", specifier = ">=1.4.0" },
     { name = "mdformat", specifier = ">=1.0.0" },
-    { name = "metametameta", specifier = ">=0.1.5" },
+    { name = "metametameta", specifier = "==0.1.12" },
     { name = "mkdocs", specifier = ">=1.6.0" },
     { name = "mkdocstrings", extras = ["python"], specifier = ">=0.26.0" },
     { name = "mypy", specifier = ">=1.18.0" },
@@ -1824,7 +1824,7 @@ wheels = [
 
 [[package]]
 name = "metametameta"
-version = "0.1.11"
+version = "0.1.12"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "colorlog" },
@@ -1832,9 +1832,9 @@ dependencies = [
     { name = "toml" },
     { name = "totalhelp" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/2e/41/a971537b76ecfdc065ba0172f85994f012042e62d1030f53c5b19f34b314/metametameta-0.1.11.tar.gz", hash = "sha256:788e6d3b94d7859ce2278a50bf83fa7036f293f5dd42e5077249295b97345094", size = 32701, upload-time = "2026-05-03T00:24:43.242Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b9/80/86e9ce1d90cde9b4574ceea3ff3dce647a074f69ec95b599e982615bb706/metametameta-0.1.12.tar.gz", hash = "sha256:950c34000e4ac95cac103aa3a9a7bca4fffc32c33506899be2b182702c25cdf5", size = 32792, upload-time = "2026-05-04T18:26:27.941Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/04/0a/45a4f6fe69d3a06ea11114295a53340fe10afd40e3d6ce38f20352b5401a/metametameta-0.1.11-py3-none-any.whl", hash = "sha256:b5a75492141badafa3a13ed3e57a43004a0198f46fd77c534f54c1f58a7505c8", size = 41244, upload-time = "2026-05-03T00:24:41.797Z" },
+    { url = "https://files.pythonhosted.org/packages/00/02/b58e4f8543a15be65f8e9f7efe5b93b85a04ba00a45c575006c331beef62/metametameta-0.1.12-py3-none-any.whl", hash = "sha256:4803c2f957e8a3ab0249ab466637c2053ff6126cc1e2f47c6273b33329f7ea60", size = 41342, upload-time = "2026-05-04T18:26:26.271Z" },
 ]
 
 [[package]]
@@ -2218,7 +2218,7 @@ wheels = [
 
 [[package]]
 name = "openai"
-version = "2.33.0"
+version = "2.34.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -2230,9 +2230,9 @@ dependencies = [
     { name = "tqdm" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f0/ee/d056c82f63c05f06baac0cffb4a90952d8274f90c49dfe244f20497b9bbd/openai-2.33.0.tar.gz", hash = "sha256:f850c435e2a4685bba3295bd54912dd26315d9c1b7733068186134d6e0599f9a", size = 693254, upload-time = "2026-04-28T14:04:42.428Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/7b/89/f1e78f5f828f4e97a6ebca8f45c6b35667da12b074ac490dc8362b882279/openai-2.34.0.tar.gz", hash = "sha256:828b4efcbb126352c2b5eb97d33ae890c92a71ab72511aefc1b7fe64aeccb07b", size = 759556, upload-time = "2026-05-04T17:34:08.721Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7d/32/37734d769bc8b42e4938785313cc05aade6cb0fa72479d3220a0d61a4e78/openai-2.33.0-py3-none-any.whl", hash = "sha256:03ac37d70e8c9e3a8124214e3afa785e2cbc12e627fbd98177a086ef2fd87ad5", size = 1162695, upload-time = "2026-04-28T14:04:40.482Z" },
+    { url = "https://files.pythonhosted.org/packages/f2/40/f090499f10514515081d09cb9da09f25b821eb20497e9423afe4f07b4ecf/openai-2.34.0-py3-none-any.whl", hash = "sha256:c996a71b1a210f3569844572ad4c609307e978515fb76877cf449b72596e549e", size = 1316535, upload-time = "2026-05-04T17:34:06.773Z" },
 ]
 
 [[package]]

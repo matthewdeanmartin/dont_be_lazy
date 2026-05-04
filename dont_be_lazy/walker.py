@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 import fnmatch
-import logging
 import os
-import shutil
 import subprocess  # nosec B404
 from collections.abc import Iterator
 
+from dont_be_lazy.git import GIT_BIN
 
 DEFAULT_SKIP_DIRS = {
     ".git",
@@ -33,9 +32,8 @@ DEFAULT_EXTENSIONS = {".py", ".pyi", ".toml", ".ini", ".cfg", ".yaml", ".yml", "
 def _gitignored_files(root: str) -> set[str] | None:
     """Return set of repo-relative paths tracked by git, or None if not a git repo."""
     try:
-        git_bin = shutil.which("git") or "git"
         result = subprocess.run(  # nosec B603
-            [git_bin, "ls-files", "--cached", "--others", "--exclude-standard"],
+            [GIT_BIN, "ls-files", "--cached", "--others", "--exclude-standard"],
             cwd=root,
             capture_output=True,
             check=False,

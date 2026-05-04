@@ -1,5 +1,7 @@
 """Tests for extended config scanners (Phase 2)."""
 
+import pytest
+
 from dont_be_lazy.models import RiskLevel
 from dont_be_lazy.scanners.config import (
     find_and_scan_configs,
@@ -66,6 +68,7 @@ def test_pytype_cfg(tmp_path):
 
 
 def test_safety_yaml(tmp_path):
+    pytest.importorskip("yaml")
     yml = tmp_path / ".safety-policy.yml"
     yml.write_text("ignore:\n  12345:\n    reason: 'test'\n    expires: '2026-12-01'\n  67890:\n    reason: 'no fix'\n")
     findings = scan_safety_yaml(str(yml))

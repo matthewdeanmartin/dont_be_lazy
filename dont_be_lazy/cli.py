@@ -9,7 +9,6 @@ import fnmatch
 import json
 import os
 import re
-import shutil
 import subprocess  # nosec B404
 import sys
 
@@ -45,6 +44,7 @@ from dont_be_lazy.formatters.json_fmt import format_json, format_jsonl
 from dont_be_lazy.formatters.markdown_fmt import format_markdown
 from dont_be_lazy.formatters.sarif import format_sarif
 from dont_be_lazy.formatters.table import format_table
+from dont_be_lazy.git import GIT_BIN
 from dont_be_lazy.models import RiskLevel, Suppression
 from dont_be_lazy.parallel import parallel_scan_configs, parallel_scan_py
 from dont_be_lazy.policy import check_all
@@ -59,9 +59,8 @@ def _find_root(explicit: str | None) -> str:
     if explicit:
         return os.path.abspath(explicit)
     try:
-        git_bin = shutil.which("git") or "git"
         result = subprocess.run(  # nosec B603
-            [git_bin, "rev-parse", "--show-toplevel"],
+            [GIT_BIN, "rev-parse", "--show-toplevel"],
             capture_output=True,
             check=False,
             text=True,

@@ -78,7 +78,7 @@ def format_sarif(findings: list[Suppression], root: str = "") -> str:
                 "invocations": [
                     {
                         "executionSuccessful": True,
-                        "startTimeUtc": datetime.datetime.utcnow().isoformat() + "Z",
+                        "startTimeUtc": datetime.datetime.now(datetime.timezone.utc).isoformat() + "Z",
                     }
                 ],
             }

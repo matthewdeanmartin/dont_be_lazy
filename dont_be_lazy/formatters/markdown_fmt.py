@@ -10,7 +10,7 @@ from dont_be_lazy.models import RiskLevel, Suppression
 
 def format_markdown(findings: list[Suppression], root: str = "") -> str:
     """Format findings as a compact Markdown report."""
-    now = datetime.datetime.utcnow().strftime("%Y-%m-%d")
+    now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d")
     lines = [
         "# dont_be_lazy report",
         "",
