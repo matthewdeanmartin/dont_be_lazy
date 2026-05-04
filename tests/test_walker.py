@@ -6,12 +6,12 @@ import tempfile
 from dont_be_lazy.walker import walk_paths
 
 
-def _make_tree(files: dict) -> str:
+def _make_tree(files: dict[str, str]) -> str:
     root = tempfile.mkdtemp()
     for rel, content in files.items():
         abs_path = os.path.join(root, rel)
         os.makedirs(os.path.dirname(abs_path), exist_ok=True)
-        with open(abs_path, "w") as f:
+        with open(abs_path, "w", encoding="utf-8") as f:
             f.write(content)
     return root
 

@@ -1,24 +1,26 @@
 """Tests for risk scoring."""
 
+from typing import Any
+
 from dont_be_lazy.models import RiskLevel, ScopeKind, Suppression
 from dont_be_lazy.risk import score
 
 
 def _sup(**kwargs):
-    defaults = dict(
-        tool="ruff",
-        kind="noqa-blanket",
-        pattern="# noqa",
-        path="src/foo.py",
-        line=1,
-        end_line=1,
-        scope=ScopeKind.line,
-        codes=[],
-        reason=None,
-        risk=RiskLevel.medium,
-        flags=[],
-        text="x = 1  # noqa",
-    )
+    defaults: dict[str, Any] = {
+        "tool": "ruff",
+        "kind": "noqa-blanket",
+        "pattern": "# noqa",
+        "path": "src/foo.py",
+        "line": 1,
+        "end_line": 1,
+        "scope": ScopeKind.line,
+        "codes": [],
+        "reason": None,
+        "risk": RiskLevel.medium,
+        "flags": [],
+        "text": "x = 1  # noqa",
+    }
     defaults.update(kwargs)
     return Suppression(**defaults)
 

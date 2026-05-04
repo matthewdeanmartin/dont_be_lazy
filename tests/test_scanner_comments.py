@@ -2,6 +2,7 @@
 
 import os
 
+from dont_be_lazy.models import RiskLevel
 from dont_be_lazy.scanners.python_comments import scan_python_comments
 
 FIXTURE = os.path.join(os.path.dirname(__file__), "fixtures", "sample_comments.py")
@@ -100,8 +101,6 @@ def test_pylint_disable_all_critical():
     findings = _scan("# pylint: disable=all\n")
     match = next((s for s in findings if s.tool == "pylint"), None)
     assert match is not None
-    from dont_be_lazy.models import RiskLevel
-
     assert match.risk == RiskLevel.critical
 
 

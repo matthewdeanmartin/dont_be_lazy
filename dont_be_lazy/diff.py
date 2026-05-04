@@ -18,10 +18,7 @@ def suppression_in_diff(
     hunks: list[tuple[int, int]],
 ) -> bool:
     """Return True if suppression_line falls within any changed hunk."""
-    for start, end in hunks:
-        if start <= suppression_line <= end:
-            return True
-    return False
+    return any(start <= suppression_line <= end for start, end in hunks)
 
 
 def build_diff_index(ref: str, paths: list[str], cwd: str) -> dict[str, list[tuple[int, int]]]:

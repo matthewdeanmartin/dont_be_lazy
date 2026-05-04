@@ -3,30 +3,27 @@
 from __future__ import annotations
 
 import configparser
+import importlib
 import json
 import os
-import sys
-from typing import Any
+from typing import Any, cast
 
 from dont_be_lazy.models import RiskLevel, ScopeKind, Suppression
 
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    try:
-        import tomllib  # type: ignore[no-redef]
-    except ImportError:
+
+def _load_optional_module(*names: str) -> Any | None:
+    """Import the first available module from *names*."""
+    for name in names:
         try:
-            import tomli as tomllib  # type: ignore[no-redef]
-        except ImportError:
-            tomllib = None  # type: ignore[assignment]
+            return importlib.import_module(name)
+        except ModuleNotFoundError:
+            continue
+    return None
 
-try:
-    import yaml as _yaml
 
-    _HAS_YAML = True
-except ImportError:
-    _HAS_YAML = False
+tomllib = _load_optional_module("tomllib", "tomli")
+yaml = _load_optional_module("yaml")
+_HAS_YAML = yaml is not None
 
 
 def _make(
@@ -324,8 +321,8 @@ def scan_toml(path: str) -> list[Suppression]:
         return []
     try:
         with open(path, "rb") as f:
-            data = tomllib.load(f)
-    except Exception:
+            data = cast(dict[str, Any], tomllib.load(f))
+    except (OSError, ValueError, TypeError):
         return []
 
     results: list[Suppression] = []
@@ -353,6 +350,7 @@ def _read_ini(path: str) -> configparser.ConfigParser:
 
 
 def scan_flake8_ini(path: str) -> list[Suppression]:
+    """Scan a Flake8-style INI file for suppression settings."""
     cp = _read_ini(path)
     results: list[Suppression] = []
     for section in ("flake8",):
@@ -389,6 +387,7 @@ def scan_flake8_ini(path: str) -> list[Suppression]:
 
 
 def scan_pylint_ini(path: str) -> list[Suppression]:
+    """Scan a pylint INI/RC file for disabled checks."""
     cp = _read_ini(path)
     results: list[Suppression] = []
     for section in ("MESSAGES CONTROL", "messages_control", "pylint.messages_control"):
@@ -405,6 +404,7 @@ def scan_pylint_ini(path: str) -> list[Suppression]:
 
 
 def scan_mypy_ini(path: str) -> list[Suppression]:
+    """Scan a mypy INI file for broad ignore settings."""
     cp = _read_ini(path)
     results: list[Suppression] = []
     if cp.has_section("mypy"):
@@ -437,30 +437,30 @@ def scan_mypy_ini(path: str) -> list[Suppression]:
             )
 
     for section in cp.sections():
-        if section.startswith("mypy-") and section != "mypy":
-            if cp.has_option(section, "ignore_errors"):
-                val = cp.get(section, "ignore_errors")
-                if val.lower() in ("true", "1", "yes"):
-                    results.append(
-                        _make(
-                            "mypy",
-                            "ignore-errors-config",
-                            path,
-                            f"[{section}].ignore_errors",
-                            True,
-                            risk=RiskLevel.critical,
-                            codes=[section[5:]],
-                        )
+        if section.startswith("mypy-") and section != "mypy" and cp.has_option(section, "ignore_errors"):
+            val = cp.get(section, "ignore_errors")
+            if val.lower() in ("true", "1", "yes"):
+                results.append(
+                    _make(
+                        "mypy",
+                        "ignore-errors-config",
+                        path,
+                        f"[{section}].ignore_errors",
+                        True,
+                        risk=RiskLevel.critical,
+                        codes=[section[5:]],
                     )
+                )
     return results
 
 
 def scan_coveragerc(path: str) -> list[Suppression]:
+    """Scan a coverage configuration file for omit/exclude directives."""
     cp = _read_ini(path)
     results: list[Suppression] = []
     if cp.has_section("run") and cp.has_option("run", "omit"):
         val = cp.get("run", "omit")
-        lines = [l.strip() for l in val.splitlines() if l.strip()]
+        lines = [entry.strip() for entry in val.splitlines() if entry.strip()]
         results.append(
             _make(
                 "coverage",
@@ -474,7 +474,7 @@ def scan_coveragerc(path: str) -> list[Suppression]:
         )
     if cp.has_section("report") and cp.has_option("report", "exclude_lines"):
         val = cp.get("report", "exclude_lines")
-        lines = [l.strip() for l in val.splitlines() if l.strip()]
+        lines = [entry.strip() for entry in val.splitlines() if entry.strip()]
         results.append(
             _make(
                 "coverage", "exclude-lines-broad", path, "[report].exclude_lines", lines, risk=RiskLevel.high, codes=[]
@@ -489,10 +489,11 @@ def scan_coveragerc(path: str) -> list[Suppression]:
 
 
 def scan_pyrightconfig(path: str) -> list[Suppression]:
+    """Scan pyrightconfig.json for disabled or excluded diagnostics."""
     try:
         with open(path, encoding="utf-8") as f:
             data = json.load(f)
-    except Exception:
+    except (OSError, json.JSONDecodeError):
         return []
 
     results: list[Suppression] = []
@@ -516,6 +517,7 @@ def scan_pyrightconfig(path: str) -> list[Suppression]:
 
 
 def scan_pytype_cfg(path: str) -> list[Suppression]:
+    """Scan pytype.cfg for disabled diagnostics and excludes."""
     cp = _read_ini(path)
     results: list[Suppression] = []
     if cp.has_section("pytype"):
@@ -534,14 +536,16 @@ def scan_pytype_cfg(path: str) -> list[Suppression]:
 
 
 def scan_safety_yaml(path: str) -> list[Suppression]:
+    """Scan Safety YAML policy files for ignored vulnerability entries."""
     if not _HAS_YAML:
         return []
+    assert yaml is not None
     try:
-        import yaml
-
         with open(path, encoding="utf-8") as f:
             data = yaml.safe_load(f)
-    except Exception:
+    except OSError:
+        return []
+    except yaml.YAMLError:
         return []
 
     if not isinstance(data, dict):
@@ -582,14 +586,16 @@ def scan_safety_yaml(path: str) -> list[Suppression]:
 
 
 def scan_bandit_yaml(path: str) -> list[Suppression]:
+    """Scan Bandit YAML config files for skips and excludes."""
     if not _HAS_YAML:
         return []
+    assert yaml is not None
     try:
-        import yaml
-
         with open(path, encoding="utf-8") as f:
             data = yaml.safe_load(f)
-    except Exception:
+    except OSError:
+        return []
+    except yaml.YAMLError:
         return []
 
     if not isinstance(data, dict):

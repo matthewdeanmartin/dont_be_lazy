@@ -52,7 +52,12 @@ def test_unittest_skip():
 
 
 def test_unittest_skipif():
-    source = 'import sys, unittest\nclass T(unittest.TestCase):\n    @unittest.skipIf(sys.platform=="win32","win")\n    def test_x(self): pass\n'
+    source = (
+        "import sys, unittest\n"
+        "class T(unittest.TestCase):\n"
+        '    @unittest.skipIf(sys.platform=="win32","win")\n'
+        "    def test_x(self): pass\n"
+    )
     findings = _scan(source)
     assert any(s.kind == "skip-conditional" for s in findings)
 

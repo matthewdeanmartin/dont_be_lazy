@@ -2,35 +2,41 @@
 
 from __future__ import annotations
 
+import contextlib
 import re
-import subprocess
+import shutil
+import subprocess  # nosec B404
 from datetime import datetime
+
+GIT_BIN = shutil.which("git") or "git"
 
 
 def _run(args: list[str], cwd: str, timeout: int = 15) -> str | None:
     try:
-        result = subprocess.run(
+        result = subprocess.run(  # nosec B603
             args,
             capture_output=True,
+            check=False,
             text=True,
             timeout=timeout,
             cwd=cwd,
         )
         if result.returncode == 0:
             return result.stdout
-    except Exception:
+    except (OSError, subprocess.SubprocessError):
         pass
     return None
 
 
 def is_git_repo(path: str) -> bool:
-    return _run(["git", "rev-parse", "--git-dir"], cwd=path) is not None
+    """Return True when *path* is inside a Git repository."""
+    return _run([GIT_BIN, "rev-parse", "--git-dir"], cwd=path) is not None
 
 
 def blame_line(path: str, line: int, cwd: str) -> dict[str, str] | None:
     """Return {'author': ..., 'email': ..., 'date': 'YYYY-MM-DD'} for a line, or None."""
     out = _run(
-        ["git", "blame", "-L", f"{line},{line}", "--porcelain", path],
+        [GIT_BIN, "blame", "-L", f"{line},{line}", "--porcelain", path],
         cwd=cwd,
     )
     if not out:
@@ -43,10 +49,8 @@ def blame_line(path: str, line: int, cwd: str) -> dict[str, str] | None:
             info["email"] = ln[len("author-mail ") :].strip().strip("<>")
         elif ln.startswith("author-time "):
             ts = ln[len("author-time ") :].strip()
-            try:
+            with contextlib.suppress(ValueError):
                 info["date"] = datetime.utcfromtimestamp(int(ts)).strftime("%Y-%m-%d")
-            except ValueError:
-                pass
     return info if info else None
 
 
@@ -56,7 +60,7 @@ def blame_lines(path: str, lines: list[int], cwd: str) -> dict[int, dict[str, st
         return {}
     lo, hi = min(lines), max(lines)
     out = _run(
-        ["git", "blame", "-L", f"{lo},{hi}", "--porcelain", path],
+        [GIT_BIN, "blame", "-L", f"{lo},{hi}", "--porcelain", path],
         cwd=cwd,
     )
     if not out:
@@ -80,10 +84,8 @@ def blame_lines(path: str, lines: list[int], cwd: str) -> dict[int, dict[str, st
             current_info["email"] = ln[12:].strip().strip("<>")
         elif ln.startswith("author-time "):
             ts = ln[12:].strip()
-            try:
+            with contextlib.suppress(ValueError):
                 current_info["date"] = datetime.utcfromtimestamp(int(ts)).strftime("%Y-%m-%d")
-            except ValueError:
-                pass
 
     if current_line in lines and current_info:
         result[current_line] = dict(current_info)
@@ -98,14 +100,14 @@ def first_seen_by_log(path: str, text: str, cwd: str) -> str | None:
     """
     # Use -S to find commits that added/removed the text
     out = _run(
-        ["git", "log", "--diff-filter=A", "--follow", "--format=%ai", "-S", text, "--", path],
+        [GIT_BIN, "log", "--diff-filter=A", "--follow", "--format=%ai", "-S", text, "--", path],
         cwd=cwd,
         timeout=30,
     )
     if not out:
         # Fall back: any commit touching that text
         out = _run(
-            ["git", "log", "--format=%ai", "-S", text, "--", path],
+            [GIT_BIN, "log", "--format=%ai", "-S", text, "--", path],
             cwd=cwd,
             timeout=30,
         )
@@ -124,7 +126,7 @@ def first_seen_by_log(path: str, text: str, cwd: str) -> str | None:
 
 def changed_files_since(ref: str, cwd: str) -> list[str]:
     """Return list of file paths changed since `ref` (git diff --name-only REF)."""
-    out = _run(["git", "diff", "--name-only", ref], cwd=cwd)
+    out = _run([GIT_BIN, "diff", "--name-only", ref], cwd=cwd)
     if not out:
         return []
     return [p.strip() for p in out.splitlines() if p.strip()]
@@ -132,7 +134,7 @@ def changed_files_since(ref: str, cwd: str) -> list[str]:
 
 def diff_hunks_since(ref: str, path: str, cwd: str) -> list[tuple[int, int]]:
     """Return list of (start_line, end_line) hunks changed in path since ref."""
-    out = _run(["git", "diff", "-U0", ref, "--", path], cwd=cwd)
+    out = _run([GIT_BIN, "diff", "-U0", ref, "--", path], cwd=cwd)
     if not out:
         return []
     hunks: list[tuple[int, int]] = []

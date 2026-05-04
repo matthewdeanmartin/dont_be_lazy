@@ -1,5 +1,27 @@
 """Sample file for extended suppression types."""
 
+from typing import Any, cast
+
+from hypothesis import HealthCheck, settings
+
+
+class _Thing:
+    pass
+
+
+something = cast(Any, _Thing())
+thing = "value"
+other = "other"
+
+
+def dangerous() -> int:
+    return 1
+
+
+def maybe() -> int:
+    return 2
+
+
 # pytype: disable=attribute-error
 x = something.bad
 # pytype: enable=attribute-error
@@ -24,8 +46,6 @@ messy = {1:2,3:4}
 x = 1  # NOSONAR
 
 # ignore this workaround
-
-from hypothesis import HealthCheck, settings
 
 
 @settings(suppress_health_check=[HealthCheck.too_slow])

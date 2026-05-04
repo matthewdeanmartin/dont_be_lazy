@@ -1,6 +1,6 @@
 """Tests for extended config scanners (Phase 2)."""
 
-
+from dont_be_lazy.models import RiskLevel
 from dont_be_lazy.scanners.config import (
     find_and_scan_configs,
     scan_pytype_cfg,
@@ -22,7 +22,6 @@ def test_vulture_ignore_names_wildcard_critical(tmp_path):
     t = tmp_path / "pyproject.toml"
     t.write_bytes(b'[tool.vulture]\nignore_names = ["*"]\n')
     findings = scan_toml(str(t))
-    from dont_be_lazy.models import RiskLevel
 
     v = next((s for s in findings if s.tool == "vulture" and s.kind == "ignore-names"), None)
     assert v is not None
@@ -33,7 +32,6 @@ def test_pip_audit_toml(tmp_path):
     t = tmp_path / "pyproject.toml"
     t.write_bytes(b'[tool.pip-audit]\nignore-vulns = ["PYSEC-2024-001"]\n')
     findings = scan_toml(str(t))
-    from dont_be_lazy.models import RiskLevel
 
     p = next((s for s in findings if s.tool == "pip-audit"), None)
     assert p is not None
@@ -72,7 +70,6 @@ def test_safety_yaml(tmp_path):
     yml.write_text("ignore:\n  12345:\n    reason: 'test'\n    expires: '2026-12-01'\n  67890:\n    reason: 'no fix'\n")
     findings = scan_safety_yaml(str(yml))
     assert len(findings) == 2
-    from dont_be_lazy.models import RiskLevel
 
     with_expiry = next((s for s in findings if "12345" in s.codes), None)
     assert with_expiry is not None

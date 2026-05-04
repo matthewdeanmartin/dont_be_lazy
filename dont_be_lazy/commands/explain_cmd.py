@@ -8,7 +8,7 @@ from typing import Any
 from dont_be_lazy.models import ScopeKind, Suppression
 
 # Per-tool review prompts
-_REVIEW_PROMPTS: dict = {
+_REVIEW_PROMPTS: dict[str, list[str]] = {
     "ruff": [
         "Can the code be changed to satisfy the rule?",
         "Is the rule still enabled in the current config?",
@@ -163,6 +163,7 @@ def _risk_rationale(s: Suppression) -> str:
 
 
 def explain_suppression(s: Suppression) -> str:
+    """Render a human-readable explanation for a single suppression."""
     prompts = _REVIEW_PROMPTS.get(s.tool, _DEFAULT_PROMPTS)
 
     lines = [
@@ -225,6 +226,7 @@ def explain_suppression_json(s: Suppression) -> dict[str, Any]:
 
 
 def find_suppression_by_id(findings: list[Suppression], dbl_id: str) -> Suppression | None:
+    """Return the suppression matching a DBL identifier, if present."""
     dbl_id = dbl_id.upper()
     for s in findings:
         if s.id == dbl_id:
@@ -233,6 +235,7 @@ def find_suppression_by_id(findings: list[Suppression], dbl_id: str) -> Suppress
 
 
 def find_suppression_by_location(findings: list[Suppression], path: str, line: int) -> Suppression | None:
+    """Return the suppression found at a specific path and line."""
     normalized_target = os.path.normpath(path)
     for s in findings:
         if s.line != line:

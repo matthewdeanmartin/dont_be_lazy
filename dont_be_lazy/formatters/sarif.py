@@ -19,6 +19,7 @@ _SEVERITY = {
 
 
 def format_sarif(findings: list[Suppression], root: str = "") -> str:
+    """Format findings as a SARIF 2.1.0 document."""
     rules: dict[str, dict[str, Any]] = {}
     results = []
 

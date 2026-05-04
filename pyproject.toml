@@ -49,15 +49,29 @@ include = ["/README.md", "LICENSE", "/dont_be_lazy", "/tests"]
 
 [dependency-groups]
 dev = [
-    "bandit>=1.9.4",
+
+    # formatters
     "black>=26.0.0",
     "isort>=6.0.0",
+    "yamlfix>=1.19.0",
+    "mdformat>=1.0.0",
+    # tools
+    "pyclean>=3.0.0",
+    "bandit>=1.9.4",
     "jiggle-version>=2.1.0",
     "codespell>=2.4.1",
-    "mdformat>=1.0.0",
+
     "metametameta>=0.1.5",
-    "mypy>=1.18.0",
     "pylint[spelling]>=4.0.0",
+    "ruff>=0.12.0",
+    "troml-dev-status>=0.6.0",
+    "pre-commit>=4.0.0",
+    "pip-audit>=2.7.0",
+    # Type hinting
+    "mypy>=1.18.0",
+    "types-PyYAML>6.0.12.2",
+
+    # testing
     "pytest>=8.4.0",
     "pytest-cov>=6.0.0",
     "pytest-xdist>=3.5.0",
@@ -66,29 +80,30 @@ dev = [
     "pytest-mock>=3.14.0",
     "pytest-timeout>=2.4.0",
     "hypothesis>=6.100.0",
-    "ruff>=0.12.0",
-    "troml-dev-status>=0.6.0",
-    "pre-commit>=4.0.0",
-    "pip-audit>=2.7.0",
+    # tox
     "tox>=4.0",
     "tox-uv>=1.0",
+    # gha
     "gha-update>=0.1.0; python_version >= '3.12'",
     "pyyaml>=6.0",
-    "yamlfix>=1.19.0",
+
+    # docs
     "interrogate>=1.5.0",
     "linkcheckmd>=1.4.0",
     "pyenchant>=3.2.2",
     "mkdocs>=1.6.0",
     "mkdocstrings[python]>=0.26.0",
+    "pydoclint>=0.8.0; python_version >= '3.10'",
+    "pydoctest==0.2.1",
+    # llm export
     "git2md>=0.1.0",
-    "pyclean>=3.0.0",
+
     # dead code analysis (advisory)
     "vulture>=2.11",
     "deadcode>=2.4.0",
     # API surface / doc checks
     "griffe>=1.0.0",
-    "pydoclint>=0.8.0; python_version >= '3.10'",
-    "pydoctest==0.2.1",
+
     # advisory / exploratory tools (standalone make targets, not quality gates)
     "refurb>=2.0.0; python_version >= '3.10'",
     "crosshair-tool>=0.0.80; python_version >= '3.10'",
@@ -145,6 +160,7 @@ packages = ["dont_be_lazy", "tests"]
 [[tool.mypy.overrides]]
 module = "tests.*"
 disallow_untyped_defs = false
+disallow_incomplete_defs = false
 disallow_untyped_calls = false
 
 [tool.ruff]

@@ -1,26 +1,27 @@
 """Tests for SARIF formatter."""
 
 import json
+from typing import Any
 
 from dont_be_lazy.formatters.sarif import format_sarif
 from dont_be_lazy.models import RiskLevel, ScopeKind, Suppression
 
 
 def _sup(**kwargs):
-    defaults = dict(
-        tool="ruff",
-        kind="noqa-blanket",
-        pattern="# noqa",
-        path="src/foo.py",
-        line=10,
-        end_line=10,
-        scope=ScopeKind.line,
-        codes=[],
-        reason=None,
-        risk=RiskLevel.high,
-        flags=[],
-        text="x = 1  # noqa",
-    )
+    defaults: dict[str, Any] = {
+        "tool": "ruff",
+        "kind": "noqa-blanket",
+        "pattern": "# noqa",
+        "path": "src/foo.py",
+        "line": 10,
+        "end_line": 10,
+        "scope": ScopeKind.line,
+        "codes": [],
+        "reason": None,
+        "risk": RiskLevel.high,
+        "flags": [],
+        "text": "x = 1  # noqa",
+    }
     defaults.update(kwargs)
     return Suppression(**defaults)
 

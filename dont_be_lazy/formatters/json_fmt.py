@@ -10,6 +10,7 @@ from dont_be_lazy.models import Suppression
 
 
 def _sup_to_dict(s: Suppression) -> dict[str, Any]:
+    """Serialize one suppression to a JSON-safe dictionary."""
     doc: dict[str, Any] = {
         "id": s.id,
         "tool": s.tool,
@@ -44,6 +45,7 @@ def _sup_to_dict(s: Suppression) -> dict[str, Any]:
 
 
 def format_json(findings: list[Suppression], root: str = "") -> str:
+    """Format findings as a single JSON document."""
     by_tool: dict[str, int] = {}
     for s in findings:
         by_tool[s.tool] = by_tool.get(s.tool, 0) + 1
@@ -62,4 +64,5 @@ def format_json(findings: list[Suppression], root: str = "") -> str:
 
 
 def format_jsonl(findings: list[Suppression]) -> str:
+    """Format findings as newline-delimited JSON."""
     return "\n".join(json.dumps(_sup_to_dict(s)) for s in findings) + ("\n" if findings else "")

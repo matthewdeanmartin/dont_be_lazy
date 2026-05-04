@@ -1,23 +1,25 @@
 """Tests for the Suppression data model."""
 
+from typing import Any
+
 from dont_be_lazy.models import RiskLevel, ScopeKind, Suppression
 
 
 def _make(**kwargs):
-    defaults = dict(
-        tool="ruff",
-        kind="noqa-blanket",
-        pattern="# noqa",
-        path="src/foo.py",
-        line=1,
-        end_line=1,
-        scope=ScopeKind.line,
-        codes=[],
-        reason=None,
-        risk=RiskLevel.medium,
-        flags=[],
-        text="x = 1  # noqa",
-    )
+    defaults: dict[str, Any] = {
+        "tool": "ruff",
+        "kind": "noqa-blanket",
+        "pattern": "# noqa",
+        "path": "src/foo.py",
+        "line": 1,
+        "end_line": 1,
+        "scope": ScopeKind.line,
+        "codes": [],
+        "reason": None,
+        "risk": RiskLevel.medium,
+        "flags": [],
+        "text": "x = 1  # noqa",
+    }
     defaults.update(kwargs)
     return Suppression(**defaults)
 
@@ -50,4 +52,4 @@ def test_risk_level_ordering():
     assert RiskLevel.medium < RiskLevel.high
     assert RiskLevel.high < RiskLevel.critical
     assert RiskLevel.low <= RiskLevel.low
-    assert not (RiskLevel.high < RiskLevel.medium)
+    assert RiskLevel.high >= RiskLevel.medium

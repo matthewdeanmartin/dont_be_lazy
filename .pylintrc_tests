@@ -23,7 +23,6 @@ disable=
     missing-module-docstring,
     missing-class-docstring,
     missing-function-docstring,
-    no-self-use,
     attribute-defined-outside-init,
     invalid-name
 

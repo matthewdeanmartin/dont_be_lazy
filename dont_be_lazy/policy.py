@@ -10,6 +10,8 @@ from dont_be_lazy.models import ScopeKind, Suppression
 
 @dataclass
 class PolicyViolation:
+    """A single rule violation produced by the policy engine."""
+
     rule_id: str
     message: str
     suppression: Suppression

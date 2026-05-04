@@ -3,26 +3,27 @@
 from __future__ import annotations
 
 import json
+from typing import Any
 
 from dont_be_lazy.commands.stale_cmd import attach_blame, filter_stale, format_stale_json, format_stale_table, parse_age
 from dont_be_lazy.models import RiskLevel, ScopeKind, Suppression
 
 
 def _suppression(**kwargs) -> Suppression:
-    defaults = dict(
-        tool="ruff",
-        kind="noqa-blanket",
-        pattern="# noqa",
-        path="src\\mod.py",
-        line=2,
-        end_line=2,
-        scope=ScopeKind.line,
-        codes=[],
-        reason=None,
-        risk=RiskLevel.high,
-        flags=["blanket-ignore"],
-        text="value = 1  # noqa",
-    )
+    defaults: dict[str, Any] = {
+        "tool": "ruff",
+        "kind": "noqa-blanket",
+        "pattern": "# noqa",
+        "path": "src\\mod.py",
+        "line": 2,
+        "end_line": 2,
+        "scope": ScopeKind.line,
+        "codes": [],
+        "reason": None,
+        "risk": RiskLevel.high,
+        "flags": ["blanket-ignore"],
+        "text": "value = 1  # noqa",
+    }
     defaults.update(kwargs)
     return Suppression(**defaults)
 

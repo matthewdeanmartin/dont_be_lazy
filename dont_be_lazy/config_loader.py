@@ -2,34 +2,42 @@
 
 from __future__ import annotations
 
+import importlib
 import os
-import sys
-from typing import Any
+from typing import Any, cast
 
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    try:
-        import tomllib  # type: ignore[no-redef]
-    except ImportError:
+
+def _load_optional_module(*names: str) -> Any | None:
+    """Import the first available module from *names*."""
+    for name in names:
         try:
-            import tomli as tomllib  # type: ignore[no-redef]
-        except ImportError:
-            tomllib = None  # type: ignore[assignment]
+            return importlib.import_module(name)
+        except ModuleNotFoundError:
+            continue
+    return None
+
+
+tomllib = _load_optional_module("tomllib", "tomli")
 
 
 def _load_toml(path: str) -> dict[str, Any]:
+    """Load a TOML file into a dictionary."""
     if tomllib is None:
         return {}
     with open(path, "rb") as f:
-        return tomllib.load(f)
+        return cast(dict[str, Any], tomllib.load(f))
 
 
 def discover_config(root: str, explicit: str | None = None) -> dict[str, Any]:
     """Return the [tool.dont_be_lazy] config dict (or empty dict)."""
     if explicit:
         data = _load_toml(explicit)
-        return data.get("tool", {}).get("dont_be_lazy", data)
+        tool_section = data.get("tool", {})
+        if isinstance(tool_section, dict):
+            dont_be_lazy_section = tool_section.get("dont_be_lazy")
+            if isinstance(dont_be_lazy_section, dict):
+                return dont_be_lazy_section
+        return data
 
     candidates = [
         os.path.join(root, "pyproject.toml"),
@@ -39,8 +47,9 @@ def discover_config(root: str, explicit: str | None = None) -> dict[str, Any]:
     for path in candidates:
         if os.path.isfile(path):
             data = _load_toml(path)
-            section = data.get("tool", {}).get("dont_be_lazy", None)
-            if section is not None:
+            tool_section = data.get("tool", {})
+            section = tool_section.get("dont_be_lazy") if isinstance(tool_section, dict) else None
+            if isinstance(section, dict):
                 return section
             if "dont_be_lazy" in data or path.endswith("dont_be_lazy.toml") or path.endswith(".dont-be-lazy.toml"):
                 return data

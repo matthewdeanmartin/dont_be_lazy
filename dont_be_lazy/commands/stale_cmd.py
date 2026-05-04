@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+import collections
+import json
 import re
 from datetime import date
 
+from dont_be_lazy import git
+from dont_be_lazy.formatters.json_fmt import _sup_to_dict
 from dont_be_lazy.models import Suppression
 
 
@@ -42,9 +46,7 @@ def attach_blame(
 
     Priority: baseline first_seen > git log -S > git blame > None.
     """
-    from dont_be_lazy.git import blame_line, first_seen_by_log, is_git_repo
-
-    git_available = is_git_repo(root)
+    git_available = git.is_git_repo(root)
 
     for s in findings:
         date_str: str | None = None
@@ -56,12 +58,12 @@ def attach_blame(
 
         # 2. git log -S
         if date_str is None and with_git_history and git_available:
-            date_str = first_seen_by_log(s.path, s.text.strip(), root)
+            date_str = git.first_seen_by_log(s.path, s.text.strip(), root)
             s.first_seen = date_str
 
         # 3. git blame
         if date_str is None and with_git_blame and git_available:
-            info = blame_line(s.path, s.line, root)
+            info = git.blame_line(s.path, s.line, root)
             if info:
                 s.git_author = info.get("author")
                 s.git_email = info.get("email")
@@ -93,8 +95,7 @@ def format_stale_table(
     findings: list[Suppression],
     group_by: str = "tool",
 ) -> str:
-    import collections
-
+    """Format stale findings as a plain-text report."""
     lines = ["Stale suppressions", ""]
     header = f"{'Age':>5}  {'Risk':<8}  {'Tool':<12}  {'Path':40}  {'Line':>5}  Text"
     lines.append(header)
@@ -122,10 +123,7 @@ def format_stale_table(
 
 
 def format_stale_json(findings: list[Suppression]) -> str:
-    import json
-
-    from dont_be_lazy.formatters.json_fmt import _sup_to_dict
-
+    """Format stale findings as JSON."""
     items = []
     for s in findings:
         obj = _sup_to_dict(s)

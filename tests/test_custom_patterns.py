@@ -1,6 +1,7 @@
 """Tests for custom suppression pattern support."""
 
 from dont_be_lazy.custom_patterns import CustomPatternScanner
+from dont_be_lazy.models import RiskLevel
 
 
 def test_custom_pattern_matches():
@@ -33,8 +34,6 @@ def test_custom_pattern_no_codes():
     source = "x = 1  # our-linter: ignore\n"
     findings = scanner.scan("test.py", source)
     assert len(findings) == 1
-    from dont_be_lazy.models import RiskLevel
-
     assert findings[0].risk == RiskLevel.high
 
 
@@ -70,10 +69,10 @@ def test_invalid_regex_skipped():
         }
     }
     scanner = CustomPatternScanner(config)
-    assert scanner._compiled == []
+    assert not scanner._compiled
 
 
 def test_empty_config():
     scanner = CustomPatternScanner({})
     findings = scanner.scan("test.py", "x = 1  # noqa\n")
-    assert findings == []
+    assert not findings

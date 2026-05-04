@@ -21,7 +21,7 @@ _RUFF_DISABLE = re.compile(r"#\s*ruff\s*:\s*disable\[(?P<codes>[^\]]+)\]", re.IG
 _RUFF_ENABLE = re.compile(r"#\s*ruff\s*:\s*enable\[(?P<codes>[^\]]+)\]", re.IGNORECASE)
 _RUFF_FILE_IGNORE = re.compile(r"#\s*ruff\s*:\s*file-ignore\[(?P<codes>[^\]]+)\]", re.IGNORECASE)
 
-# type: ignore
+# inline mypy suppression comments
 _TYPE_IGNORE = re.compile(r"#\s*type\s*:\s*ignore(?:\[(?P<codes>[^\]]+)\])?")
 
 # mypy file-level
@@ -135,7 +135,7 @@ def _match_comment(
     path: str,
     line: int,
     source_line: str,
-    block_state: dict,
+    block_state: dict[str, list[Suppression]],
 ) -> list[Suppression]:
     """Match one comment token and return zero or more Suppression objects."""
     results: list[Suppression] = []
@@ -526,26 +526,25 @@ def _match_comment(
         )
 
     # --- Suspicious free-text suppression phrases ---
-    if _SUSPICIOUS.search(comment):
+    if _SUSPICIOUS.search(comment) and not results:
         # Only add if no specific suppression already matched this comment
-        if not results:
-            results.append(
-                _make(
-                    "unknown",
-                    "suspicious-comment",
-                    comment.strip(),
-                    path,
-                    line,
-                    source_line,
-                    risk=RiskLevel.low,
-                    flags=["suspicious"],
-                )
+        results.append(
+            _make(
+                "unknown",
+                "suspicious-comment",
+                comment.strip(),
+                path,
+                line,
+                source_line,
+                risk=RiskLevel.low,
+                flags=["suspicious"],
             )
+        )
 
     return results
 
 
-def _close_unclosed_blocks(block_state: dict, findings: list[Suppression]) -> None:
+def _close_unclosed_blocks(block_state: dict[str, list[Suppression]]) -> None:
     for key in (
         "fmt_off",
         "isort_off",
@@ -558,14 +557,13 @@ def _close_unclosed_blocks(block_state: dict, findings: list[Suppression]) -> No
         for sup in block_state.get(key, []):
             sup.flags.append("unclosed-block-suppression")
             # Don't downgrade risk; only upgrade if currently lower than high
-            if sup.risk < RiskLevel.high:
-                sup.risk = RiskLevel.high
+            sup.risk = max(sup.risk, RiskLevel.high)
 
 
 def scan_python_comments(path: str, source: str) -> list[Suppression]:
     """Scan a Python source file for suppression comments using tokenize."""
     results: list[Suppression] = []
-    block_state: dict = {}
+    block_state: dict[str, list[Suppression]] = {}
     source_lines = source.splitlines()
 
     try:
@@ -581,5 +579,5 @@ def scan_python_comments(path: str, source: str) -> list[Suppression]:
         found = _match_comment(tok_string, path, line_no, source_line, block_state)
         results.extend(found)
 
-    _close_unclosed_blocks(block_state, results)
+    _close_unclosed_blocks(block_state)
     return results

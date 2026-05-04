@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import fnmatch
+import logging
 import os
-import subprocess
+import shutil
+import subprocess  # nosec B404
 from collections.abc import Iterator
+
 
 DEFAULT_SKIP_DIRS = {
     ".git",
@@ -27,13 +30,15 @@ DEFAULT_SKIP_DIRS = {
 DEFAULT_EXTENSIONS = {".py", ".pyi", ".toml", ".ini", ".cfg", ".yaml", ".yml", ".json"}
 
 
-def _gitignored_files(root: str) -> set | None:
+def _gitignored_files(root: str) -> set[str] | None:
     """Return set of repo-relative paths tracked by git, or None if not a git repo."""
     try:
-        result = subprocess.run(
-            ["git", "ls-files", "--cached", "--others", "--exclude-standard"],
+        git_bin = shutil.which("git") or "git"
+        result = subprocess.run(  # nosec B603
+            [git_bin, "ls-files", "--cached", "--others", "--exclude-standard"],
             cwd=root,
             capture_output=True,
+            check=False,
             text=True,
             timeout=10,
         )
@@ -49,13 +54,13 @@ def walk_paths(
     include_globs: list[str] | None = None,
     exclude_globs: list[str] | None = None,
     respect_gitignore: bool = True,
-    extensions: set | None = None,
+    extensions: set[str] | None = None,
 ) -> Iterator[str]:
     """Yield absolute file paths to scan under *root*."""
     if extensions is None:
         extensions = DEFAULT_EXTENSIONS
 
-    git_files: set | None = None
+    git_files: set[str] | None = None
     if respect_gitignore:
         git_files = _gitignored_files(root)
 

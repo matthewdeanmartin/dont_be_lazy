@@ -7,8 +7,12 @@ import os
 from dataclasses import dataclass, field
 from enum import Enum
 
+# pylint: disable=invalid-name
+
 
 class RiskLevel(str, Enum):
+    """Severity assigned to a suppression."""
+
     low = "low"
     medium = "medium"
     high = "high"
@@ -18,20 +22,26 @@ class RiskLevel(str, Enum):
     def _idx(v: RiskLevel) -> int:
         return [RiskLevel.low, RiskLevel.medium, RiskLevel.high, RiskLevel.critical].index(v)
 
-    def __lt__(self, other: RiskLevel) -> bool:
-        return self._idx(self) < self._idx(other)
+    @classmethod
+    def _coerce(cls, other: str) -> RiskLevel:
+        return other if isinstance(other, cls) else cls(other)
 
-    def __le__(self, other: RiskLevel) -> bool:
-        return self._idx(self) <= self._idx(other)
+    def __lt__(self, other: str) -> bool:
+        return self._idx(self) < self._idx(self._coerce(other))
 
-    def __gt__(self, other: RiskLevel) -> bool:
-        return self._idx(self) > self._idx(other)
+    def __le__(self, other: str) -> bool:
+        return self._idx(self) <= self._idx(self._coerce(other))
 
-    def __ge__(self, other: RiskLevel) -> bool:
-        return self._idx(self) >= self._idx(other)
+    def __gt__(self, other: str) -> bool:
+        return self._idx(self) > self._idx(self._coerce(other))
+
+    def __ge__(self, other: str) -> bool:
+        return self._idx(self) >= self._idx(self._coerce(other))
 
 
 class ScopeKind(str, Enum):
+    """Scope at which a suppression applies."""
+
     line = "line"
     next_line = "next-line"
     block = "block"
@@ -45,6 +55,8 @@ class ScopeKind(str, Enum):
 
 @dataclass
 class Suppression:
+    """Normalized representation of a detected suppression."""
+
     tool: str
     kind: str
     pattern: str

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import os
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
@@ -13,9 +14,10 @@ def _scan_file(
     encoding: str,
     scan_comments: bool,
     scan_ast: bool,
-    custom_patterns_cfg: dict,
+    custom_patterns_cfg: dict[str, object],
 ) -> list[Suppression]:
     """Worker: scan a single Python file and return Suppression objects."""
+    # pylint: disable=import-outside-toplevel
     from dont_be_lazy.custom_patterns import CustomPatternScanner
     from dont_be_lazy.scanners.python_ast import scan_python_ast
     from dont_be_lazy.scanners.python_comments import scan_python_comments
@@ -38,6 +40,7 @@ def _scan_file(
 
 
 def _scan_config_file(path: str) -> list[Suppression]:
+    # pylint: disable=import-outside-toplevel
     from dont_be_lazy.scanners.config import scan_config_file
 
     return scan_config_file(path)
@@ -48,7 +51,7 @@ def parallel_scan_py(
     encoding: str = "utf-8",
     scan_comments: bool = True,
     scan_ast: bool = True,
-    custom_patterns_cfg: dict | None = None,
+    custom_patterns_cfg: dict[str, object] | None = None,
     jobs: int | None = None,
 ) -> list[Suppression]:
     """Scan Python files in parallel; falls back to sequential on single job."""
@@ -66,10 +69,8 @@ def parallel_scan_py(
     with ProcessPoolExecutor(max_workers=jobs) as executor:
         futures = {executor.submit(_scan_file, p, encoding, scan_comments, scan_ast, cfg): p for p in py_paths}
         for fut in as_completed(futures):
-            try:
+            with contextlib.suppress(Exception):
                 results.extend(fut.result())
-            except Exception:
-                pass
     return results
 
 
@@ -90,8 +91,6 @@ def parallel_scan_configs(
     with ProcessPoolExecutor(max_workers=jobs) as executor:
         futures = {executor.submit(_scan_config_file, p): p for p in config_paths}
         for fut in as_completed(futures):
-            try:
+            with contextlib.suppress(Exception):
                 results.extend(fut.result())
-            except Exception:
-                pass
     return results

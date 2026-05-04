@@ -14,7 +14,7 @@ class CustomPatternScanner:
     """Scans for user-defined suppression patterns from config."""
 
     def __init__(self, patterns_config: dict[str, Any]) -> None:
-        self._compiled: list[tuple] = []  # (tool, scope, risk, regex)
+        self._compiled: list[tuple[str, ScopeKind, RiskLevel, re.Pattern[str]]] = []
         for tool_name, entry in patterns_config.items():
             if isinstance(entry, dict):
                 raw_patterns = entry.get("patterns", [])
@@ -41,6 +41,7 @@ class CustomPatternScanner:
                     pass  # Invalid regex — skip silently
 
     def scan(self, path: str, source: str) -> list[Suppression]:
+        """Scan source comments for configured custom suppression patterns."""
         if not self._compiled:
             return []
 

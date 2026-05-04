@@ -1,5 +1,25 @@
 """Sample file with suppression comments for testing."""
 
+thing = "wrong"
+
+
+class _MissingAttr:
+    pass
+
+
+other = _MissingAttr()
+debug = True
+impossible = False
+
+
+def bad() -> int:
+    return 1
+
+
+def worse() -> int:
+    return 2
+
+
 x = 1
 y = 2
 z = 3
@@ -9,11 +29,12 @@ b = """
 type: ignore should not be flagged here
 """
 
-c = thing  # type: ignore
-d = other  # type: ignore[attr-defined]
+# ruff: noqa
+c: int = thing  # type: ignore
+d = other.missing  # type: ignore[attr-defined]
 
-e = bad  # nosec
-f = worse  # nosec B602
+e = bad()  # nosec
+f = worse()  # nosec B602
 
 if debug:  # pragma: no cover
     pass

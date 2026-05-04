@@ -11,7 +11,8 @@ _COL_SEP = "  "
 
 
 def format_table(findings: list[Suppression], no_color: bool = False) -> str:
-    _COLORS = {
+    """Format findings as an aligned plain-text table."""
+    colors = {
         "critical": "\033[91m",
         "high": "\033[93m",
         "medium": "\033[94m",
@@ -40,7 +41,7 @@ def format_table(findings: list[Suppression], no_color: bool = False) -> str:
         for i, cell in enumerate(row):
             widths[i] = max(widths[i], len(cell))
 
-    def fmt_row(row: tuple) -> str:
+    def fmt_row(row: tuple[str, ...]) -> str:
         return _COL_SEP.join(cell.ljust(widths[i]) for i, cell in enumerate(row))
 
     lines = [
@@ -50,8 +51,8 @@ def format_table(findings: list[Suppression], no_color: bool = False) -> str:
     for row, s in zip(rows, findings, strict=True):
         line = fmt_row(row)
         if not no_color:
-            color = _COLORS.get(s.risk.value, "")
-            reset = _COLORS["reset"]
+            color = colors.get(s.risk.value, "")
+            reset = colors["reset"]
             line = f"{color}{line}{reset}"
         lines.append(line)
         if s.context:

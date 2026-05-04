@@ -2,6 +2,7 @@
 
 import os
 
+from dont_be_lazy.models import RiskLevel
 from dont_be_lazy.scanners.python_comments import scan_python_comments
 
 FIXTURE = os.path.join(os.path.dirname(__file__), "fixtures", "sample_extended.py")
@@ -48,7 +49,6 @@ def test_nosemgrep_blanket():
     f = next((s for s in findings if s.tool == "semgrep"), None)
     assert f is not None
     assert f.kind == "nosemgrep-blanket"
-    from dont_be_lazy.models import RiskLevel
 
     assert f.risk == RiskLevel.critical
 

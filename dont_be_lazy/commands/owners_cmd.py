@@ -5,6 +5,8 @@ from __future__ import annotations
 import collections
 import json
 
+from dont_be_lazy import git
+from dont_be_lazy.formatters.json_fmt import _sup_to_dict
 from dont_be_lazy.models import Suppression
 
 
@@ -39,12 +41,8 @@ def attach_owners(
     root: str,
     owner_map: dict[str, str] | None = None,
 ) -> list[Suppression]:
-    """
-    Attach owner metadata to findings and return the same list.
-    """
-    from dont_be_lazy.git import blame_lines, is_git_repo
-
-    if not is_git_repo(root):
+    """Attach owner metadata to findings and return the same list."""
+    if not git.is_git_repo(root):
         for s in findings:
             s.owner = "unknown"
         return findings
@@ -58,7 +56,7 @@ def attach_owners(
 
     for path, items in by_path.items():
         lines = [line for line, _ in items]
-        blame_data = blame_lines(path, lines, root)
+        blame_data = git.blame_lines(path, lines, root)
         for line, s in items:
             info = blame_data.get(line, {})
             s.git_author = info.get("author", "unknown")
@@ -73,6 +71,7 @@ def format_owners_table(
     findings: list[Suppression],
     group_by: str = "author",
 ) -> str:
+    """Format owner-grouped findings as plain text."""
     groups: dict[str, list[Suppression]] = collections.defaultdict(list)
     for s in findings:
         if group_by == "email":
@@ -98,8 +97,7 @@ def format_owners_table(
 
 
 def format_owners_json(findings: list[Suppression]) -> str:
-    from dont_be_lazy.formatters.json_fmt import _sup_to_dict
-
+    """Format owner-enriched findings as JSON."""
     items = []
     for s in findings:
         items.append(_sup_to_dict(s))

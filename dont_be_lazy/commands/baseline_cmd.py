@@ -4,13 +4,16 @@ from __future__ import annotations
 
 import json
 from datetime import date
+from typing import Any, cast
 
+from dont_be_lazy.formatters.json_fmt import _sup_to_dict
 from dont_be_lazy.models import Suppression
 
 _SCHEMA_VERSION = "1"
 
 
-def _baseline_entry(s: Suppression) -> dict:
+def _baseline_entry(s: Suppression) -> dict[str, Any]:
+    """Build the persisted baseline entry for one suppression."""
     return {
         "id": s.id,
         "fingerprint": s.fingerprint(),
@@ -25,7 +28,7 @@ def _baseline_entry(s: Suppression) -> dict:
     }
 
 
-def create_baseline(findings: list[Suppression]) -> dict:
+def create_baseline(findings: list[Suppression]) -> dict[str, Any]:
     """Build baseline dict from current findings."""
     return {
         "version": _SCHEMA_VERSION,
@@ -35,29 +38,32 @@ def create_baseline(findings: list[Suppression]) -> dict:
     }
 
 
-def save_baseline(baseline: dict, output_path: str) -> None:
+def save_baseline(baseline: dict[str, Any], output_path: str) -> None:
+    """Write a baseline document to disk."""
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(baseline, f, indent=2)
         f.write("\n")
 
 
-def load_baseline(path: str) -> dict:
+def load_baseline(path: str) -> dict[str, Any]:
+    """Load a baseline document from disk."""
     with open(path, encoding="utf-8") as f:
-        return json.load(f)
+        return cast(dict[str, Any], json.load(f))
 
 
-def baseline_fingerprints(baseline: dict) -> set[str]:
+def baseline_fingerprints(baseline: dict[str, Any]) -> set[str]:
+    """Return the fingerprints present in a baseline document."""
     return {e["fingerprint"] for e in baseline.get("entries", [])}
 
 
-def baseline_first_seen_map(baseline: dict) -> dict[str, str]:
+def baseline_first_seen_map(baseline: dict[str, Any]) -> dict[str, str]:
     """Return {fingerprint: first_seen_date}."""
     return {e["fingerprint"]: e.get("first_seen", "") for e in baseline.get("entries", [])}
 
 
 def check_new_findings(
     findings: list[Suppression],
-    baseline: dict,
+    baseline: dict[str, Any],
 ) -> tuple[list[Suppression], list[Suppression]]:
     """
     Return (new_findings, known_findings).
@@ -72,9 +78,9 @@ def check_new_findings(
 
 
 def prune_baseline(
-    baseline: dict,
+    baseline: dict[str, Any],
     current_findings: list[Suppression],
-) -> tuple[dict, list[dict]]:
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     """
     Remove baseline entries whose fingerprints no longer appear in current findings.
 
@@ -94,9 +100,8 @@ def format_check_result(
     known_count: int,
     fmt: str = "table",
 ) -> str:
+    """Format the result of a baseline check command."""
     if fmt == "json":
-        from dont_be_lazy.formatters.json_fmt import _sup_to_dict
-
         return json.dumps(
             {
                 "new_count": len(new_findings),

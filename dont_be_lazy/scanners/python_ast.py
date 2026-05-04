@@ -6,6 +6,8 @@ import ast
 
 from dont_be_lazy.models import RiskLevel, ScopeKind, Suppression
 
+# pylint: disable=invalid-name
+
 
 def _static_str(node: ast.expr) -> str | None:
     """Return a static string value from an AST node, or None."""
@@ -14,7 +16,7 @@ def _static_str(node: ast.expr) -> str | None:
     return None
 
 
-def _get_kwarg(keywords: list, name: str) -> ast.expr | None:
+def _get_kwarg(keywords: list[ast.keyword], name: str) -> ast.expr | None:
     for kw in keywords:
         if kw.arg == name:
             return kw.value
@@ -47,7 +49,9 @@ def _make(
     )
 
 
-class _Visitor(ast.NodeVisitor):
+class _Visitor(ast.NodeVisitor):  # pylint: disable=invalid-name
+    """AST visitor that extracts skip/xfail-related suppressions."""
+
     def __init__(self, path: str, source_lines: list[str]) -> None:
         self.path = path
         self.source_lines = source_lines
@@ -155,30 +159,30 @@ class _Visitor(ast.NodeVisitor):
             )
 
         # hypothesis @settings(suppress_health_check=...) or deadline=None
-        elif name in ("settings", "hypothesis.settings"):
-            if isinstance(dec, ast.Call):
-                shc = _get_kwarg(dec.keywords, "suppress_health_check")
-                if shc is not None:
-                    self.findings.append(
-                        _make("hypothesis", "suppress-health-check", self.path, line, src, risk=RiskLevel.medium)
-                    )
-                deadline = _get_kwarg(dec.keywords, "deadline")
-                if deadline is not None and isinstance(deadline, ast.Constant) and deadline.value is None:
-                    self.findings.append(
-                        _make("hypothesis", "deadline-none", self.path, line, src, risk=RiskLevel.medium)
-                    )
+        elif name in ("settings", "hypothesis.settings") and isinstance(dec, ast.Call):
+            shc = _get_kwarg(dec.keywords, "suppress_health_check")
+            if shc is not None:
+                self.findings.append(
+                    _make("hypothesis", "suppress-health-check", self.path, line, src, risk=RiskLevel.medium)
+                )
+            deadline = _get_kwarg(dec.keywords, "deadline")
+            if deadline is not None and isinstance(deadline, ast.Constant) and deadline.value is None:
+                self.findings.append(_make("hypothesis", "deadline-none", self.path, line, src, risk=RiskLevel.medium))
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+        """Visit a function definition and inspect its decorators."""
         for dec in node.decorator_list:
             self._visit_decorator(dec, node.lineno)
         self.generic_visit(node)
 
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
+        """Visit an async function definition and inspect its decorators."""
         for dec in node.decorator_list:
             self._visit_decorator(dec, node.lineno)
         self.generic_visit(node)
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
+        """Visit a class definition and inspect its decorators."""
         for dec in node.decorator_list:
             self._visit_decorator(dec, node.lineno)
         self.generic_visit(node)

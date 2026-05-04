@@ -8,6 +8,7 @@ from dont_be_lazy.policy import PolicyViolation, rules_table
 
 
 def format_rules_list(fmt: str = "table") -> str:
+    """Format the configured policy rule catalog."""
     rules = rules_table()
     if fmt == "json":
         return json.dumps(rules, indent=2)
@@ -28,6 +29,7 @@ def format_rules_test(
     violations: list[PolicyViolation],
     fmt: str = "table",
 ) -> str:
+    """Format policy rule evaluation results."""
     if fmt == "json":
         return json.dumps(
             [

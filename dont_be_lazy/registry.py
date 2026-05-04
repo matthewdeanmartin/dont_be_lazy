@@ -7,6 +7,8 @@ from dataclasses import dataclass
 
 @dataclass
 class PatternEntry:
+    """Static metadata for one supported suppression pattern."""
+
     tool: str
     kind: str
     example: str
@@ -289,18 +291,22 @@ for _e in _ENTRIES:
 
 
 def all_tools() -> list[str]:
+    """Return all known suppression tools."""
     return sorted(_BY_TOOL.keys())
 
 
 def entries_for_tool(tool: str | None = None) -> list[PatternEntry]:
+    """Return registry entries, optionally filtered to one tool."""
     if tool:
         return _BY_TOOL.get(tool, [])
     return _ENTRIES
 
 
 def inline_entries(tool: str | None = None) -> list[PatternEntry]:
+    """Return inline-comment registry entries."""
     return [e for e in entries_for_tool(tool) if e.inline]
 
 
 def config_entries(tool: str | None = None) -> list[PatternEntry]:
+    """Return config-file registry entries."""
     return [e for e in entries_for_tool(tool) if not e.inline]

@@ -9,6 +9,7 @@ from dont_be_lazy.models import RiskLevel, Suppression
 
 
 def format_markdown(findings: list[Suppression], root: str = "") -> str:
+    """Format findings as a compact Markdown report."""
     now = datetime.datetime.utcnow().strftime("%Y-%m-%d")
     lines = [
         "# dont_be_lazy report",
@@ -41,7 +42,7 @@ def format_markdown(findings: list[Suppression], root: str = "") -> str:
         lines.append("")
         critical_first = sorted(findings, key=lambda s: list(RiskLevel).index(s.risk), reverse=True)
         for i, s in enumerate(critical_first[:10], 1):
-            rel = os.path.relpath(s.path) if os.path.isabs(s.path) else s.path
+            rel = os.path.relpath(s.path, root) if root and os.path.isabs(s.path) else s.path
             lines.append(f"{i}. `{rel}:{s.line}` — `{s.text[:60]}`")
         lines.append("")
 

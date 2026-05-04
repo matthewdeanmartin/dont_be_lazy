@@ -1,6 +1,7 @@
 """Tests for output formatters."""
 
 import json
+from typing import Any
 
 from dont_be_lazy.formatters.json_fmt import format_json, format_jsonl
 from dont_be_lazy.formatters.markdown_fmt import format_markdown
@@ -9,20 +10,20 @@ from dont_be_lazy.models import RiskLevel, ScopeKind, Suppression
 
 
 def _sup(**kwargs):
-    defaults = dict(
-        tool="ruff",
-        kind="noqa-blanket",
-        pattern="# noqa",
-        path="src/foo.py",
-        line=10,
-        end_line=10,
-        scope=ScopeKind.line,
-        codes=[],
-        reason=None,
-        risk=RiskLevel.high,
-        flags=[],
-        text="x = 1  # noqa",
-    )
+    defaults: dict[str, Any] = {
+        "tool": "ruff",
+        "kind": "noqa-blanket",
+        "pattern": "# noqa",
+        "path": "src/foo.py",
+        "line": 10,
+        "end_line": 10,
+        "scope": ScopeKind.line,
+        "codes": [],
+        "reason": None,
+        "risk": RiskLevel.high,
+        "flags": [],
+        "text": "x = 1  # noqa",
+    }
     defaults.update(kwargs)
     return Suppression(**defaults)
 
@@ -55,7 +56,7 @@ def test_json_schema():
 def test_jsonl():
     sups = [_sup(), _sup(tool="mypy", kind="type-ignore-blanket")]
     out = format_jsonl(sups)
-    lines = [l for l in out.splitlines() if l]
+    lines = [line for line in out.splitlines() if line]
     assert len(lines) == 2
     assert json.loads(lines[0])["tool"] == "ruff"
 

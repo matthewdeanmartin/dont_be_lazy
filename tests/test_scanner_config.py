@@ -2,6 +2,7 @@
 
 import os
 
+from dont_be_lazy.models import RiskLevel
 from dont_be_lazy.scanners.config import scan_coveragerc, scan_flake8_ini, scan_mypy_ini, scan_pyrightconfig, scan_toml
 
 FIXTURE_TOML = os.path.join(os.path.dirname(__file__), "fixtures", "sample_pyproject.toml")
@@ -24,8 +25,6 @@ def test_mypy_ignore_errors_override():
     mypy = [s for s in findings if s.tool == "mypy"]
     assert any(s.kind == "ignore-errors-config" for s in mypy)
     match = next(s for s in mypy if s.kind == "ignore-errors-config")
-    from dont_be_lazy.models import RiskLevel
-
     assert match.risk == RiskLevel.critical
 
 
@@ -77,7 +76,6 @@ def test_pyrightconfig(tmp_path):
     jf = tmp_path / "pyrightconfig.json"
     jf.write_text('{"typeCheckingMode": "off", "exclude": ["generated"]}')
     findings = scan_pyrightconfig(str(jf))
-    from dont_be_lazy.models import RiskLevel
 
     match = next((s for s in findings if s.kind == "type-checking-off"), None)
     assert match is not None
