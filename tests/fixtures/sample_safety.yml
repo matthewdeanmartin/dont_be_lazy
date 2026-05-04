@@ -1,0 +1,6 @@
+ignore:
+  12345:
+    reason: "False positive in test env"
+    expires: "2026-12-01"
+  67890:
+    reason: "Accepted risk, no fix available"

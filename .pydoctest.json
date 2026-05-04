@@ -1,0 +1,5 @@
+{
+    "include_paths": ["dont_be_lazy/**/*.py"],
+    "fail_on_missing_docstring": false,
+    "parser": "google"
+}

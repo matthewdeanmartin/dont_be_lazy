@@ -1,0 +1,31 @@
+[tool.ruff.lint]
+ignore = ["E501", "B008"]
+extend-ignore = ["UP007"]
+per-file-ignores = {"tests/*.py" = ["B011"]}
+
+[tool.ruff]
+exclude = ["generated/"]
+
+[tool.mypy]
+ignore_missing_imports = true
+disable_error_code = ["import-untyped"]
+
+[[tool.mypy.overrides]]
+module = ["legacy.*"]
+ignore_errors = true
+
+[tool.pytest.ini_options]
+addopts = "-m 'not slow'"
+
+[tool.coverage.run]
+omit = ["tests/*", "generated/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "pragma: no cover",
+  "if TYPE_CHECKING:",
+]
+
+[tool.bandit]
+skips = ["B101"]
+exclude_dirs = ["tests"]
