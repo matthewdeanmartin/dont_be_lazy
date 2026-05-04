@@ -40,6 +40,49 @@ def test_exclude_glob():
     assert "t.py" not in basenames
 
 
+def test_walk_custom_extensions(tmp_path):
+    a = tmp_path / "a.py"
+    a.write_text("x=1")
+    b = tmp_path / "b.custom"
+    b.write_text("y=2")
+    paths = list(walk_paths(str(tmp_path), extensions={".custom"}, respect_gitignore=False))
+    assert len(paths) == 1
+    assert paths[0].endswith("b.custom")
+
+
+def test_walk_respect_gitignore(tmp_path, monkeypatch):
+    import dont_be_lazy.walker
+    a = tmp_path / "a.py"
+    a.write_text("x=1")
+    b = tmp_path / "b.py"
+    b.write_text("y=2")
+
+    # Mock git ls-files to only include a.py
+    monkeypatch.setattr(dont_be_lazy.walker, "_gitignored_files", lambda root: {"a.py"})
+
+    paths = list(walk_paths(str(tmp_path), respect_gitignore=True))
+    assert len(paths) == 1
+    assert paths[0].endswith("a.py")
+
+
+def test_gitignored_files_timeout(monkeypatch):
+    import subprocess
+    from dont_be_lazy.walker import _gitignored_files
+    def mock_run(*args, **kwargs):
+        raise subprocess.TimeoutExpired(args[0], 10)
+    monkeypatch.setattr(subprocess, "run", mock_run)
+    assert _gitignored_files(".") is None
+
+
+def test_gitignored_files_exception(monkeypatch):
+    import subprocess
+    from dont_be_lazy.walker import _gitignored_files
+    def mock_run(*args, **kwargs):
+        raise FileNotFoundError()
+    monkeypatch.setattr(subprocess, "run", mock_run)
+    assert _gitignored_files(".") is None
+
+
 def test_include_glob():
     root = _make_tree({"src/a.py": "x=1", "other/b.py": "y=2"})
     paths = list(walk_paths(root, include_globs=["src/*.py"], respect_gitignore=False))

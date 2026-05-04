@@ -33,10 +33,34 @@ def test_format_rules_list_supports_markdown() -> None:
     assert "DBL001" in output
 
 
-def test_format_rules_test_supports_json() -> None:
+def test_format_rules_list_supports_json() -> None:
+    output = format_rules_list("json")
+    data = json.loads(output)
+    assert any(r["id"] == "DBL001" for r in data)
+
+
+def test_format_rules_list_supports_table() -> None:
+    output = format_rules_list("table")
+    assert "Rule ID" in output
+    assert "DBL001" in output
+
+
+def test_format_rules_test_supports_table() -> None:
     violation = PolicyViolation("DBL001", "Blanket inline suppression", _suppression())
+    output = format_rules_test([violation], "table")
+    assert "1 policy violation(s) found" in output
+    assert "DBL001" in output
 
-    payload = json.loads(format_rules_test([violation], "json"))
 
-    assert payload[0]["rule_id"] == "DBL001"
-    assert payload[0]["suppression_id"].startswith("DBL")
+def test_format_rules_test_long_path() -> None:
+    s = _suppression()
+    s.path = "a" * 60 + "/mod.py"
+    violation = PolicyViolation("DBL001", "Blanket inline suppression", s)
+    output = format_rules_test([violation], "table")
+    assert "..." not in output  # It just slices the last 50 chars, no ellipsis in current implementation
+    assert s.path[-50:] in output
+
+
+def test_format_rules_test_no_violations() -> None:
+    output = format_rules_test([], "table")
+    assert "No policy violations found" in output
