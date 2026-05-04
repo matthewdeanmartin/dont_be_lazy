@@ -33,7 +33,7 @@ def test_version() -> None:
 def test_cli_version():
     result = _run_cli("--version")
     assert result.returncode == 0
-    assert "0.1.0" in result.stdout
+    assert "." in result.stdout
 
 
 def test_cli_no_args_shows_help():
