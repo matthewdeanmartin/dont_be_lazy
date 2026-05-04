@@ -13,7 +13,7 @@ __all__ = [
 ]
 
 __title__ = "dont_be_lazy"
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 __description__ = "Tool that finds evidence of past skipped linting"
 __readme__ = "README.md"
 __credits__ = [{"name": "Matthew Martin", "email": "matthewdeanmartin@gmail.com"}]

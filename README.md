@@ -101,16 +101,16 @@ dont_be_lazy scan . --format sarif --output dont-be-lazy.sarif
 
 ## Documentation
 
-- [Documentation site](https://dont_be_lazy.readthedocs.io/en/latest/)
-- [Project overview](docs/overview/README.md)
-- [Installation](docs/installation.md)
-- [Quick start](docs/usage/quickstart.md)
-- [Contributing](docs/extending/CONTRIBUTING.md)
+- [Documentation site](https://dont-be-lazy.readthedocs.io/en/latest/)
+- [Project overview](https://github.com/matthewdeanmartin/dont_be_lazy/blob/main/docs/overview/README.md)
+- [Installation](https://github.com/matthewdeanmartin/dont_be_lazy/blob/main/docs/installation.md)
+- [Quick start](https://github.com/matthewdeanmartin/dont_be_lazy/blob/main/docs/usage/quickstart.md)
+- [Contributing](https://github.com/matthewdeanmartin/dont_be_lazy/blob/main/docs/extending/CONTRIBUTING.md)
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT — see [LICENSE](https://github.com/matthewdeanmartin/dont_be_lazy/blob/main/LICENSE).
 
 ## Changelog
 
-See [CHANGELOG.md](CHANGELOG.md).
+See [CHANGELOG.md](https://github.com/matthewdeanmartin/dont_be_lazy/blob/main/CHANGELOG.md).

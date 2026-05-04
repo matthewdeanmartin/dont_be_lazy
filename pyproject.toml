@@ -1,6 +1,6 @@
 [project]
 name = "dont_be_lazy"
-version = "0.1.0"
+version = "0.1.1"
 description = "Tool that finds evidence of past skipped linting"
 readme = "README.md"
 authors = [{ name = "Matthew Martin", email = "matthewdeanmartin@gmail.com" }]
@@ -23,7 +23,7 @@ dependencies = []
 
 [project.urls]
 Repository = "https://github.com/matthewdeanmartin/dont_be_lazy"
-Documentation = "https://dont_be_lazy.readthedocs.io/en/latest/"
+Documentation = "https://dont-be-lazy.readthedocs.io/en/latest/"
 Changelog = "https://github.com/matthewdeanmartin/dont_be_lazy/blob/main/CHANGELOG.md"
 homepage = "https://github.com/matthewdeanmartin/dont_be_lazy"
 issues = "https://github.com/matthewdeanmartin/dont_be_lazy/issues/"
