@@ -14,13 +14,13 @@ markdown_extensions:
   - toc:
       permalink: true
 nav:
-  - Overview:
-      - Readme.md: overview/README.md
+  - Home: index.md
+  - Overview: overview/README.md
   - Installation: installation.md
   - Usage:
       - Quick Start: usage/quickstart.md
   - Contributing: extending/CONTRIBUTING.md
-  - Change Log: CHANGELOG.md
+  - Changelog: changelog.md
 validation:
   nav:
     omitted_files: warn
