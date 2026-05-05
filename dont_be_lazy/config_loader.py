@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import importlib
 import os
-import subprocess
 from typing import Any, cast
+
+from dont_be_lazy.git import GIT_BIN, run
 
 
 def load_optional_module(*names: str) -> Any | None:
@@ -25,17 +26,9 @@ def find_root(explicit: str | None = None) -> str:
     """Return the repository root or current directory."""
     if explicit:
         return os.path.abspath(explicit)
-    try:
-        result = subprocess.run(
-            ["git", "rev-parse", "--show-toplevel"],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        if result.returncode == 0:
-            return result.stdout.strip()
-    except (OSError, subprocess.SubprocessError):
-        pass
+    root = run([GIT_BIN, "rev-parse", "--show-toplevel"], cwd=os.getcwd())
+    if root is not None:
+        return root.strip()
     return os.getcwd()
 
 

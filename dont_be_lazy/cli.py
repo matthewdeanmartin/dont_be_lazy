@@ -9,7 +9,6 @@ import fnmatch
 import json
 import os
 import re
-import subprocess
 import sys
 
 from dont_be_lazy.__about__ import __version__
@@ -66,21 +65,12 @@ from dont_be_lazy.risk import discount
 from dont_be_lazy.scanners.config import find_and_scan_configs
 from dont_be_lazy.walker import walk_paths
 
+__all__ = ["build_global_parser", "find_root", "main"]
+
 
 def get_git_root() -> str:
     """Find the root of the current git repository."""
-    try:
-        result = subprocess.run(
-            ["git", "rev-parse", "--show-toplevel"],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        if result.returncode == 0:
-            return result.stdout.strip()
-    except (OSError, subprocess.SubprocessError):
-        pass
-    return os.getcwd()
+    return find_root()
 
 
 def build_global_parser() -> argparse.ArgumentParser:
