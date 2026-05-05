@@ -6,7 +6,7 @@ import collections
 import json
 
 from dont_be_lazy import git
-from dont_be_lazy.formatters.json_fmt import _sup_to_dict
+from dont_be_lazy.formatters.json_fmt import sup_to_dict
 from dont_be_lazy.models import Suppression
 
 
@@ -100,5 +100,5 @@ def format_owners_json(findings: list[Suppression]) -> str:
     """Format owner-enriched findings as JSON."""
     items = []
     for s in findings:
-        items.append(_sup_to_dict(s))
+        items.append(sup_to_dict(s))
     return json.dumps({"findings": items}, indent=2)

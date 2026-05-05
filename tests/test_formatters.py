@@ -9,7 +9,7 @@ from dont_be_lazy.formatters.table import format_table
 from dont_be_lazy.models import RiskLevel, ScopeKind, Suppression
 
 
-def _sup(**kwargs):
+def sup(**kwargs):
     defaults: dict[str, Any] = {
         "tool": "ruff",
         "kind": "noqa-blanket",
@@ -34,14 +34,14 @@ def test_table_empty():
 
 
 def test_table_has_columns():
-    out = format_table([_sup()], no_color=True)
+    out = format_table([sup()], no_color=True)
     assert "Risk" in out
     assert "Tool" in out
     assert "ruff" in out
 
 
 def test_json_schema():
-    out = format_json([_sup()])
+    out = format_json([sup()])
     doc = json.loads(out)
     assert doc["version"] == "1.0"
     assert "findings" in doc
@@ -54,7 +54,7 @@ def test_json_schema():
 
 
 def test_jsonl():
-    sups = [_sup(), _sup(tool="mypy", kind="type-ignore-blanket")]
+    sups = [sup(), sup(tool="mypy", kind="type-ignore-blanket")]
     out = format_jsonl(sups)
     lines = [line for line in out.splitlines() if line]
     assert len(lines) == 2
@@ -62,12 +62,12 @@ def test_jsonl():
 
 
 def test_markdown_has_summary_table():
-    out = format_markdown([_sup(), _sup(tool="mypy")])
+    out = format_markdown([sup(), sup(tool="mypy")])
     assert "## Summary" in out
     assert "ruff" in out
     assert "mypy" in out
 
 
 def test_markdown_has_highest_priority():
-    out = format_markdown([_sup(risk=RiskLevel.critical)])
+    out = format_markdown([sup(risk=RiskLevel.critical)])
     assert "## Highest priority" in out

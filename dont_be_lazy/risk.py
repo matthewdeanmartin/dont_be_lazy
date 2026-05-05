@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from dont_be_lazy.models import RiskLevel, ScopeKind, Suppression
 
-_SECURITY_TOOLS = {"bandit", "semgrep", "secrets"}
-_NO_CODE_TOOLS = {"black", "isort", "coverage"}  # these never carry codes; don't penalise
+SECURITY_TOOLS = {"bandit", "semgrep", "secrets"}
+NO_CODE_TOOLS = {"black", "isort", "coverage"}  # these never carry codes; don't penalise
 
-_BASE: dict[str, dict[str, RiskLevel]] = {
+BASE = {
     "ruff": {
         "noqa-blanket": RiskLevel.high,
         "noqa-specific": RiskLevel.medium,
@@ -80,46 +80,47 @@ _BASE: dict[str, dict[str, RiskLevel]] = {
     },
 }
 
-_ORDER = [RiskLevel.low, RiskLevel.medium, RiskLevel.high, RiskLevel.critical]
+ORDER = [RiskLevel.low, RiskLevel.medium, RiskLevel.high, RiskLevel.critical]
 
 
-def _bump(level: RiskLevel, steps: int = 1) -> RiskLevel:
-    idx = min(len(_ORDER) - 1, _ORDER.index(level) + steps)
-    return _ORDER[idx]
+def bump(level: RiskLevel, steps: int = 1) -> RiskLevel:
+    """Raise a risk level by the requested number of steps."""
+    idx = min(len(ORDER) - 1, ORDER.index(level) + steps)
+    return ORDER[idx]
 
 
 def discount(level: RiskLevel, steps: int = 1) -> RiskLevel:
     """Lower a risk level by the requested number of steps."""
-    idx = max(0, _ORDER.index(level) - steps)
-    return _ORDER[idx]
+    idx = max(0, ORDER.index(level) - steps)
+    return ORDER[idx]
 
 
 def score(s: Suppression) -> RiskLevel:
     """Derive a risk level for a suppression from its attributes."""
-    tool_risks = _BASE.get(s.tool, {})
+    tool_risks = BASE.get(s.tool, {})
     base = tool_risks.get(s.kind, RiskLevel.medium)
 
     level = base
 
     if s.scope in (ScopeKind.file, ScopeKind.module):
-        level = _bump(level)
+        level = bump(level)
     if s.scope == ScopeKind.config:
-        level = _bump(level)
-    if not s.codes and s.tool not in _NO_CODE_TOOLS:
-        level = _bump(level)
-    if not s.reason and s.tool not in _NO_CODE_TOOLS:
-        level = _bump(level) if level < RiskLevel.high else level
-    if s.tool in _SECURITY_TOOLS:
-        level = _bump(level)
+        level = bump(level)
+    if not s.codes and s.tool not in NO_CODE_TOOLS:
+        level = bump(level)
+    if not s.reason and s.tool not in NO_CODE_TOOLS:
+        level = bump(level) if level < RiskLevel.high else level
+    if s.tool in SECURITY_TOOLS:
+        level = bump(level)
     if "unclosed-block-suppression" in s.flags:
-        level = _bump(level)
+        level = bump(level)
 
     # Credits
     if s.codes:
-        idx = max(0, _ORDER.index(level) - 1)
-        level = _ORDER[idx]
+        idx = max(0, ORDER.index(level) - 1)
+        level = ORDER[idx]
     if s.reason and "expiry" in s.reason.lower():
-        idx = max(0, _ORDER.index(level) - 1)
-        level = _ORDER[idx]
+        idx = max(0, ORDER.index(level) - 1)
+        level = ORDER[idx]
 
     return level

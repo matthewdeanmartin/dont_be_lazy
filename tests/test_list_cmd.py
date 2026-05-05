@@ -7,7 +7,7 @@ import sys
 from dont_be_lazy.registry import all_tools, config_entries, entries_for_tool, inline_entries
 
 
-def _run_cli(*args: str) -> subprocess.CompletedProcess[str]:
+def run_cli(*args: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         [sys.executable, "-m", "dont_be_lazy", *args],
         capture_output=True,
@@ -48,7 +48,7 @@ def test_registry_config_entries():
 
 
 def test_cli_list_tools():
-    result = _run_cli("list", "tools")
+    result = run_cli("list", "tools")
     assert result.returncode == 0
     lines = result.stdout.strip().splitlines()
     assert "ruff" in lines
@@ -57,7 +57,7 @@ def test_cli_list_tools():
 
 
 def test_cli_list_checks_all():
-    result = _run_cli("list", "checks")
+    result = run_cli("list", "checks")
     assert result.returncode == 0
     assert "ruff" in result.stdout
     assert "mypy" in result.stdout
@@ -65,14 +65,14 @@ def test_cli_list_checks_all():
 
 
 def test_cli_list_checks_tool_filter():
-    result = _run_cli("list", "checks", "--tool", "pytest")
+    result = run_cli("list", "checks", "--tool", "pytest")
     assert result.returncode == 0
     assert "pytest" in result.stdout
     assert "ruff" not in result.stdout
 
 
 def test_cli_list_checks_json():
-    result = _run_cli("list", "checks", "--format", "json")
+    result = run_cli("list", "checks", "--format", "json")
     assert result.returncode == 0
     data = json.loads(result.stdout)
     assert isinstance(data, list)
@@ -80,19 +80,19 @@ def test_cli_list_checks_json():
 
 
 def test_cli_list_patterns():
-    result = _run_cli("list", "patterns", "--tool", "coverage")
+    result = run_cli("list", "patterns", "--tool", "coverage")
     assert result.returncode == 0
     assert "coverage" in result.stdout
 
 
 def test_cli_list_only_inline():
-    result = _run_cli("list", "checks", "--only-inline")
+    result = run_cli("list", "checks", "--only-inline")
     assert result.returncode == 0
     # Config-only entries like "omit-broad" should not appear
     assert "omit-broad" not in result.stdout
 
 
 def test_cli_list_only_config():
-    result = _run_cli("list", "checks", "--only-config")
+    result = run_cli("list", "checks", "--only-config")
     assert result.returncode == 0
     assert "config-ignore" in result.stdout

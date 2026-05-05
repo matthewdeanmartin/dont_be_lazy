@@ -1,7 +1,6 @@
-
-import pytest
-from dont_be_lazy.models import Suppression, RiskLevel, ScopeKind
+from dont_be_lazy.models import RiskLevel, ScopeKind, Suppression
 from dont_be_lazy.policy import check, check_all
+
 
 def test_policy_blanket():
     s = Suppression(
@@ -16,10 +15,11 @@ def test_policy_blanket():
         reason=None,
         risk=RiskLevel.high,
         flags=["blanket-ignore"],
-        text="# noqa"
+        text="# noqa",
     )
     violations = check(s)
     assert any(v.rule_id == "DBL001" for v in violations)
+
 
 def test_policy_file_wide():
     s = Suppression(
@@ -34,10 +34,11 @@ def test_policy_file_wide():
         reason=None,
         risk=RiskLevel.high,
         flags=["file-wide"],
-        text="# ruff: noqa"
+        text="# ruff: noqa",
     )
     violations = check(s)
     assert any(v.rule_id == "DBL002" for v in violations)
+
 
 def test_policy_security():
     s = Suppression(
@@ -52,12 +53,13 @@ def test_policy_security():
         reason=None,
         risk=RiskLevel.critical,
         flags=["blanket-ignore"],
-        text="# nosec"
+        text="# nosec",
     )
     violations = check(s)
     assert any(v.rule_id == "DBL006" for v in violations)
     # Also blanket
     assert any(v.rule_id == "DBL001" for v in violations)
+
 
 def test_policy_skipped_test():
     s = Suppression(
@@ -72,10 +74,11 @@ def test_policy_skipped_test():
         reason=None,
         risk=RiskLevel.high,
         flags=["no-reason"],
-        text="@pytest.mark.skip"
+        text="@pytest.mark.skip",
     )
     violations = check(s)
     assert any(v.rule_id == "DBL008" for v in violations)
+
 
 def test_policy_require_reason():
     s = Suppression(
@@ -90,24 +93,45 @@ def test_policy_require_reason():
         reason=None,
         risk=RiskLevel.medium,
         flags=[],
-        text="# type: ignore[attr-defined]"
+        text="# type: ignore[attr-defined]",
     )
     # Default policy: no reason required
     assert not any(v.rule_id == "DBL004" for v in check(s))
-    
+
     # Custom policy: require reason
     policy = {"require_reason": True}
     violations = check(s, policy)
     assert any(v.rule_id == "DBL004" for v in violations)
 
+
 def test_check_all():
     s1 = Suppression(
-        tool="ruff", kind="noqa-blanket", pattern="# noqa", path="a.py", line=1, end_line=1,
-        scope=ScopeKind.line, codes=[], reason=None, risk=RiskLevel.high, flags=["blanket-ignore"], text="# noqa"
+        tool="ruff",
+        kind="noqa-blanket",
+        pattern="# noqa",
+        path="a.py",
+        line=1,
+        end_line=1,
+        scope=ScopeKind.line,
+        codes=[],
+        reason=None,
+        risk=RiskLevel.high,
+        flags=["blanket-ignore"],
+        text="# noqa",
     )
     s2 = Suppression(
-        tool="bandit", kind="nosec-blanket", pattern="# nosec", path="b.py", line=1, end_line=1,
-        scope=ScopeKind.line, codes=[], reason=None, risk=RiskLevel.critical, flags=["blanket-ignore"], text="# nosec"
+        tool="bandit",
+        kind="nosec-blanket",
+        pattern="# nosec",
+        path="b.py",
+        line=1,
+        end_line=1,
+        scope=ScopeKind.line,
+        codes=[],
+        reason=None,
+        risk=RiskLevel.critical,
+        flags=["blanket-ignore"],
+        text="# nosec",
     )
     violations = check_all([s1, s2])
     # DBL001 for both, DBL006 for bandit

@@ -1,4 +1,4 @@
-"""Command-line entry point for dont_be_lazy."""
+"""CLI entry point for dont_be_lazy."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ import fnmatch
 import json
 import os
 import re
-import subprocess  # nosec B404
+import subprocess
 import sys
 
 from dont_be_lazy.__about__ import __version__
@@ -28,8 +28,16 @@ from dont_be_lazy.commands.explain_cmd import (
     find_suppression_by_id,
     find_suppression_by_location,
 )
-from dont_be_lazy.commands.owners_cmd import attach_owners, format_owners_json, format_owners_table, load_owner_map
-from dont_be_lazy.commands.rules_cmd import format_rules_list, format_rules_test
+from dont_be_lazy.commands.owners_cmd import (
+    attach_owners,
+    format_owners_json,
+    format_owners_table,
+    load_owner_map,
+)
+from dont_be_lazy.commands.rules_cmd import (
+    format_rules_list,
+    format_rules_test,
+)
 from dont_be_lazy.commands.stale_cmd import (
     age_in_days,
     attach_blame,
@@ -38,33 +46,35 @@ from dont_be_lazy.commands.stale_cmd import (
     format_stale_table,
     parse_age,
 )
-from dont_be_lazy.config_loader import discover_config
-from dont_be_lazy.diff import build_diff_index, files_changed_since, suppression_in_diff
+from dont_be_lazy.config_loader import discover_config, find_root
+from dont_be_lazy.diff import build_diff_index, suppression_in_diff
 from dont_be_lazy.formatters.json_fmt import format_json, format_jsonl
 from dont_be_lazy.formatters.markdown_fmt import format_markdown
 from dont_be_lazy.formatters.sarif import format_sarif
 from dont_be_lazy.formatters.table import format_table
-from dont_be_lazy.git import GIT_BIN
+from dont_be_lazy.git import changed_files_since
 from dont_be_lazy.models import RiskLevel, Suppression
 from dont_be_lazy.parallel import parallel_scan_configs, parallel_scan_py
 from dont_be_lazy.policy import check_all
-from dont_be_lazy.registry import all_tools, config_entries, entries_for_tool, inline_entries
+from dont_be_lazy.registry import (
+    all_tools,
+    config_entries,
+    entries_for_tool,
+    inline_entries,
+)
 from dont_be_lazy.risk import discount
 from dont_be_lazy.scanners.config import find_and_scan_configs
 from dont_be_lazy.walker import walk_paths
 
 
-def _find_root(explicit: str | None) -> str:
-    """Return the repository root derived from --root, Git, or the cwd."""
-    if explicit:
-        return os.path.abspath(explicit)
+def get_git_root() -> str:
+    """Find the root of the current git repository."""
     try:
-        result = subprocess.run(  # nosec B603
-            [GIT_BIN, "rev-parse", "--show-toplevel"],
+        result = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
             capture_output=True,
-            check=False,
             text=True,
-            timeout=5,
+            check=True,
         )
         if result.returncode == 0:
             return result.stdout.strip()
@@ -73,7 +83,8 @@ def _find_root(explicit: str | None) -> str:
     return os.getcwd()
 
 
-def _build_global_parser() -> argparse.ArgumentParser:
+def build_global_parser() -> argparse.ArgumentParser:
+    """Build the global argument parser."""
     parser = argparse.ArgumentParser(
         prog="dont_be_lazy",
         description="Find the ignores you forgot to come back to.",
@@ -95,7 +106,8 @@ def _build_global_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _add_scan_subparser(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+def add_scan_subparser(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+    """Add the scan subparser to the parser."""
     p = sub.add_parser("scan", help="Scan for suppressions")
     p.add_argument("paths", nargs="*", metavar="PATH", help="Paths to scan (default: root)")
     p.add_argument("--format", choices=["table", "json", "jsonl", "markdown", "sarif"], default="table", dest="format_")
@@ -123,7 +135,8 @@ def _add_scan_subparser(sub: argparse._SubParsersAction[argparse.ArgumentParser]
     p.set_defaults(command="scan")
 
 
-def _add_summary_subparser(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+def add_summary_subparser(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+    """Add the summary subparser to the parser."""
     p = sub.add_parser("summary", help="High-level summary counts")
     p.add_argument("paths", nargs="*", metavar="PATH")
     p.add_argument("--by", choices=["tool", "kind", "scope", "path", "owner", "age", "risk"], default="tool")
@@ -134,7 +147,8 @@ def _add_summary_subparser(sub: argparse._SubParsersAction[argparse.ArgumentPars
     p.set_defaults(command="summary")
 
 
-def _add_list_subparser(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+def add_list_subparser(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+    """Add the list subparser to the parser."""
     p = sub.add_parser("list", help="List known suppression patterns")
     p.add_argument("what", choices=["tools", "checks", "patterns"])
     p.add_argument("--tool", default=None)
@@ -144,7 +158,8 @@ def _add_list_subparser(sub: argparse._SubParsersAction[argparse.ArgumentParser]
     p.set_defaults(command="list")
 
 
-def _add_config_suppressions_subparser(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+def add_config_suppressions_subparser(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+    """Add the config-suppressions subparser to the parser."""
     p = sub.add_parser("config-suppressions", help="Scan config-file-level suppressions")
     p.add_argument("--tool", default=None)
     p.add_argument("--format", choices=["table", "json", "markdown"], default="table", dest="format_")
@@ -152,7 +167,8 @@ def _add_config_suppressions_subparser(sub: argparse._SubParsersAction[argparse.
     p.set_defaults(command="config-suppressions")
 
 
-def _add_stale_subparser(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+def add_stale_subparser(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+    """Add the stale subparser to the parser."""
     p = sub.add_parser("stale", help="Find old/stale suppressions")
     p.add_argument("paths", nargs="*", metavar="PATH")
     p.add_argument(
@@ -171,7 +187,8 @@ def _add_stale_subparser(sub: argparse._SubParsersAction[argparse.ArgumentParser
     p.set_defaults(command="stale")
 
 
-def _add_owners_subparser(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+def add_owners_subparser(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+    """Add the owners subparser to the parser."""
     p = sub.add_parser("owners", help="Group suppressions by git blame author")
     p.add_argument("paths", nargs="*", metavar="PATH")
     p.add_argument("--owner-map", default=None, metavar="PATH", dest="owner_map")
@@ -181,14 +198,16 @@ def _add_owners_subparser(sub: argparse._SubParsersAction[argparse.ArgumentParse
     p.set_defaults(command="owners")
 
 
-def _add_explain_subparser(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+def add_explain_subparser(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+    """Add the explain subparser to the parser."""
     p = sub.add_parser("explain", help="Explain a suppression by location or ID")
     p.add_argument("target", metavar="PATH:LINE or DBL...", help="Location as path:line or a DBL... suppression ID")
     p.add_argument("--format", choices=["text", "json"], default="text", dest="format_")
     p.set_defaults(command="explain")
 
 
-def _add_baseline_subparser(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+def add_baseline_subparser(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+    """Add the baseline subparser to the parser."""
     p = sub.add_parser("baseline", help="Manage suppression baseline")
     bsub = p.add_subparsers(dest="baseline_command")
 
@@ -212,7 +231,8 @@ def _add_baseline_subparser(sub: argparse._SubParsersAction[argparse.ArgumentPar
     p.set_defaults(command="baseline")
 
 
-def _add_rules_subparser(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+def add_rules_subparser(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+    """Add the rules subparser to the parser."""
     p = sub.add_parser("rules", help="List and test policy rules")
     rsub = p.add_subparsers(dest="rules_command")
 
@@ -232,13 +252,14 @@ def _add_rules_subparser(sub: argparse._SubParsersAction[argparse.ArgumentParser
 # ---------------------------------------------------------------------------
 
 
-def _collect_findings(
+def collect_findings(
     args: argparse.Namespace,
     root: str,
     scan_paths: list[str] | None = None,
     no_config: bool = False,
     no_tests: bool = False,
 ) -> list[Suppression]:
+    """Collect all findings based on arguments and root."""
     cfg = discover_config(root, getattr(args, "config", None))
     jobs = getattr(args, "jobs", None)
 
@@ -303,11 +324,12 @@ def _collect_findings(
         if s.id not in seen:
             seen.add(s.id)
             unique.append(s)
-    _apply_generated_risk_discount(unique, root, cfg)
+    apply_generated_risk_discount(unique, root, cfg)
     return unique
 
 
-def _apply_generated_risk_discount(findings: list[Suppression], root: str, cfg: dict[str, object]) -> None:
+def apply_generated_risk_discount(findings: list[Suppression], root: str, cfg: dict[str, object]) -> None:
+    """Apply risk discount to findings in generated files."""
     generated_cfg = cfg.get("generated", {})
     if not isinstance(generated_cfg, dict) or not generated_cfg.get("risk_discount"):
         return
@@ -324,7 +346,8 @@ def _apply_generated_risk_discount(findings: list[Suppression], root: str, cfg: 
                 finding.flags.append("generated-path")
 
 
-def _attach_context(findings: list[Suppression], lines_of_context: int) -> None:
+def attach_context(findings: list[Suppression], lines_of_context: int) -> None:
+    """Attach source code context to findings."""
     if lines_of_context <= 0:
         return
 
@@ -348,10 +371,11 @@ def _attach_context(findings: list[Suppression], lines_of_context: int) -> None:
             ]
 
 
-def _filter_findings_to_changed_lines(
+def filter_findings_to_changed_lines(
     findings: list[Suppression],
     diff_index: dict[str, list[tuple[int, int]]],
 ) -> list[Suppression]:
+    """Filter findings to only include those in changed lines."""
     filtered: list[Suppression] = []
     for finding in findings:
         hunks = diff_index.get(finding.path)
@@ -362,7 +386,8 @@ def _filter_findings_to_changed_lines(
     return filtered
 
 
-def _age_bucket(first_seen: str | None) -> str:
+def age_bucket(first_seen: str | None) -> str:
+    """Categorize the age of a suppression."""
     if not first_seen:
         return "unknown"
     days = age_in_days(first_seen)
@@ -380,19 +405,20 @@ def _age_bucket(first_seen: str | None) -> str:
 # ---------------------------------------------------------------------------
 
 
-def _run_scan(args: argparse.Namespace, root: str) -> int:
+def run_scan(args: argparse.Namespace, root: str) -> int:
+    """Execute the scan command."""
     since_ref = getattr(args, "since", None)
     scan_paths: list[str] | None = None
 
     if since_ref:
-        changed = files_changed_since(since_ref, root)
+        changed = changed_files_since(since_ref, root)
         if not changed:
             if not args.quiet:
                 print(f"No files changed since {since_ref}")
             return 0
         scan_paths = list(changed)
 
-    findings = _collect_findings(
+    findings = collect_findings(
         args,
         root,
         scan_paths=scan_paths,
@@ -401,7 +427,7 @@ def _run_scan(args: argparse.Namespace, root: str) -> int:
     )
     if since_ref and scan_paths:
         diff_index = build_diff_index(since_ref, scan_paths, root)
-        findings = _filter_findings_to_changed_lines(findings, diff_index)
+        findings = filter_findings_to_changed_lines(findings, diff_index)
 
     # Baseline: new-only
     baseline_data: dict[str, object] | None = None
@@ -449,14 +475,14 @@ def _run_scan(args: argparse.Namespace, root: str) -> int:
         min_age_days = parse_age(args.min_age)
         findings = filter_stale(findings, min_age_days, include_unknown=False)
 
-    _attach_context(findings, getattr(args, "show_context", 0))
+    attach_context(findings, getattr(args, "show_context", 0))
 
     # Sort by risk desc, then path, line
-    _order = [RiskLevel.critical, RiskLevel.high, RiskLevel.medium, RiskLevel.low]
-    findings.sort(key=lambda s: (_order.index(s.risk), s.path, s.line))
+    order = [RiskLevel.critical, RiskLevel.high, RiskLevel.medium, RiskLevel.low]
+    findings.sort(key=lambda s: (order.index(s.risk), s.path, s.line))
 
     no_color = getattr(args, "no_color", False)
-    output = _format_findings(findings, args.format_, root, no_color=no_color)
+    output = format_findings(findings, args.format_, root, no_color=no_color)
 
     if getattr(args, "output", None):
         with open(args.output, "w", encoding="utf-8") as f:
@@ -481,19 +507,20 @@ def _run_scan(args: argparse.Namespace, root: str) -> int:
     return 0
 
 
-def _run_summary(args: argparse.Namespace, root: str) -> int:
-    findings = _collect_findings(args, root)
+def run_summary(args: argparse.Namespace, root: str) -> int:
+    """Execute the summary command."""
+    findings = collect_findings(args, root)
     if args.by == "owner" or args.with_git_blame:
         findings = attach_owners(findings, root)
     if args.by == "age":
         findings = attach_blame(findings, root, with_git_blame=args.with_git_blame)
 
     if not args.quiet:
-        _print_summary(findings, args.by, args.format_, getattr(args, "top", None))
+        print_summary(findings, args.by, args.format_, getattr(args, "top", None))
     return 0
 
 
-def _print_summary(findings: list[Suppression], by: str, fmt: str, top: int | None = None) -> None:
+def print_summary(findings: list[Suppression], by: str, fmt: str, top: int | None = None) -> None:
     """Print grouped summary counts for the current findings."""
     groups: dict[str, list[Suppression]] = collections.defaultdict(list)
     for s in findings:
@@ -502,7 +529,7 @@ def _print_summary(findings: list[Suppression], by: str, fmt: str, top: int | No
         elif by == "owner":
             key = s.owner or s.git_author or "unknown"
         elif by == "age":
-            key = _age_bucket(s.first_seen)
+            key = age_bucket(s.first_seen)
         else:
             key = getattr(s, by, s.tool)
         groups[str(key)].append(s)
@@ -529,7 +556,8 @@ def _print_summary(findings: list[Suppression], by: str, fmt: str, top: int | No
     print(f"Total: {len(findings)} suppressions")
 
 
-def _run_list(args: argparse.Namespace) -> int:
+def run_list(args: argparse.Namespace) -> int:
+    """Execute the list command."""
     tool_filter = getattr(args, "tool", None)
     only_inline = getattr(args, "only_inline", False)
     only_config = getattr(args, "only_config", False)
@@ -576,20 +604,22 @@ def _run_list(args: argparse.Namespace) -> int:
     return 0
 
 
-def _run_config_suppressions(args: argparse.Namespace, root: str) -> int:
+def run_config_suppressions(args: argparse.Namespace, root: str) -> int:
+    """Execute the config-suppressions command."""
     findings = find_and_scan_configs(root)
     if getattr(args, "tool", None):
         findings = [s for s in findings if s.tool == args.tool]
 
-    output = _format_findings(findings, args.format_, root, no_color=getattr(args, "no_color", False))
+    output = format_findings(findings, args.format_, root, no_color=getattr(args, "no_color", False))
     if not args.quiet:
         sys.stdout.buffer.write(output.encode("utf-8", errors="replace"))
         sys.stdout.buffer.flush()
     return 0
 
 
-def _run_stale(args: argparse.Namespace, root: str) -> int:
-    findings = _collect_findings(args, root)
+def run_stale(args: argparse.Namespace, root: str) -> int:
+    """Execute the stale command."""
+    findings = collect_findings(args, root)
 
     baseline_data = None
     if getattr(args, "baseline", None):
@@ -597,7 +627,6 @@ def _run_stale(args: argparse.Namespace, root: str) -> int:
             baseline_data = load_baseline(args.baseline)
 
     first_seen_map = baseline_first_seen_map(baseline_data) if baseline_data else None
-
     older_than = parse_age(getattr(args, "older_than", "180d"))
     findings = attach_blame(
         findings,
@@ -620,8 +649,9 @@ def _run_stale(args: argparse.Namespace, root: str) -> int:
     return 1 if stale else 0
 
 
-def _run_owners(args: argparse.Namespace, root: str) -> int:
-    findings = _collect_findings(args, root)
+def run_owners(args: argparse.Namespace, root: str) -> int:
+    """Execute the owners command."""
+    findings = collect_findings(args, root)
 
     owner_map = None
     if getattr(args, "owner_map", None):
@@ -641,10 +671,11 @@ def _run_owners(args: argparse.Namespace, root: str) -> int:
     return 0
 
 
-def _run_explain(args: argparse.Namespace, root: str) -> int:
+def run_explain(args: argparse.Namespace, root: str) -> int:
+    """Execute the explain command."""
     target = args.target
 
-    findings = _collect_findings(args, root)
+    findings = collect_findings(args, root)
 
     suppression = None
     if re.match(r"^DBL[0-9A-F]{8}$", target, re.IGNORECASE):
@@ -668,13 +699,14 @@ def _run_explain(args: argparse.Namespace, root: str) -> int:
     return 0
 
 
-def _run_baseline(args: argparse.Namespace, root: str) -> int:
+def run_baseline(args: argparse.Namespace, root: str) -> int:
+    """Execute the baseline command."""
     subcmd = getattr(args, "baseline_command", None)
     exit_code = 2
     if subcmd is None:
         print("Usage: dont_be_lazy baseline {create,check,prune}", file=sys.stderr)
     else:
-        findings = _collect_findings(args, root)
+        findings = collect_findings(args, root)
 
         if subcmd == "create":
             bl = create_baseline(findings)
@@ -712,7 +744,8 @@ def _run_baseline(args: argparse.Namespace, root: str) -> int:
     return exit_code
 
 
-def _run_rules(args: argparse.Namespace, root: str) -> int:
+def run_rules(args: argparse.Namespace, root: str) -> int:
+    """Execute the rules command."""
     subcmd = getattr(args, "rules_command", None)
     fmt = getattr(args, "format_", "table")
 
@@ -723,7 +756,7 @@ def _run_rules(args: argparse.Namespace, root: str) -> int:
     if subcmd == "test":
         cfg = discover_config(root, getattr(args, "config", None))
         policy = cfg.get("policy", {})
-        findings = _collect_findings(args, root)
+        findings = collect_findings(args, root)
         violations = check_all(findings, policy)
         print(format_rules_test(violations, fmt), end="")
         return 1 if violations else 0
@@ -731,7 +764,7 @@ def _run_rules(args: argparse.Namespace, root: str) -> int:
     return 2
 
 
-def _format_findings(findings: list[Suppression], fmt: str, root: str, no_color: bool = False) -> str:
+def format_findings(findings: list[Suppression], fmt: str, root: str, no_color: bool = False) -> str:
     """Dispatch findings to the requested output formatter."""
     if fmt == "json":
         return format_json(findings, root)
@@ -751,17 +784,17 @@ def _format_findings(findings: list[Suppression], fmt: str, root: str, no_color:
 
 def main() -> None:
     """Parse CLI arguments and dispatch to the selected subcommand."""
-    parser = _build_global_parser()
+    parser = build_global_parser()
     sub = parser.add_subparsers(dest="command")
-    _add_scan_subparser(sub)
-    _add_summary_subparser(sub)
-    _add_list_subparser(sub)
-    _add_config_suppressions_subparser(sub)
-    _add_stale_subparser(sub)
-    _add_owners_subparser(sub)
-    _add_explain_subparser(sub)
-    _add_baseline_subparser(sub)
-    _add_rules_subparser(sub)
+    add_scan_subparser(sub)
+    add_summary_subparser(sub)
+    add_list_subparser(sub)
+    add_config_suppressions_subparser(sub)
+    add_stale_subparser(sub)
+    add_owners_subparser(sub)
+    add_explain_subparser(sub)
+    add_baseline_subparser(sub)
+    add_rules_subparser(sub)
 
     args = parser.parse_args()
     # Apply global defaults to any attrs that subcommands may not define
@@ -775,7 +808,7 @@ def main() -> None:
         args.respect_gitignore = True
     if not hasattr(args, "no_color"):
         args.no_color = False
-    root = _find_root(getattr(args, "root", None))
+    root = find_root(getattr(args, "root", None))
 
     if not hasattr(args, "command") or args.command is None:
         parser.print_help()
@@ -783,23 +816,23 @@ def main() -> None:
 
     try:
         if args.command == "scan":
-            sys.exit(_run_scan(args, root))
+            sys.exit(run_scan(args, root))
         if args.command == "summary":
-            sys.exit(_run_summary(args, root))
+            sys.exit(run_summary(args, root))
         if args.command == "list":
-            sys.exit(_run_list(args))
+            sys.exit(run_list(args))
         if args.command == "config-suppressions":
-            sys.exit(_run_config_suppressions(args, root))
+            sys.exit(run_config_suppressions(args, root))
         if args.command == "stale":
-            sys.exit(_run_stale(args, root))
+            sys.exit(run_stale(args, root))
         if args.command == "owners":
-            sys.exit(_run_owners(args, root))
+            sys.exit(run_owners(args, root))
         if args.command == "explain":
-            sys.exit(_run_explain(args, root))
+            sys.exit(run_explain(args, root))
         if args.command == "baseline":
-            sys.exit(_run_baseline(args, root))
+            sys.exit(run_baseline(args, root))
         if args.command == "rules":
-            sys.exit(_run_rules(args, root))
+            sys.exit(run_rules(args, root))
         parser.print_help()
         sys.exit(2)
     except KeyboardInterrupt:

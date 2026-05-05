@@ -8,7 +8,7 @@ import re
 from datetime import date
 
 from dont_be_lazy import git
-from dont_be_lazy.formatters.json_fmt import _sup_to_dict
+from dont_be_lazy.formatters.json_fmt import sup_to_dict
 from dont_be_lazy.models import Suppression
 
 
@@ -126,7 +126,7 @@ def format_stale_json(findings: list[Suppression]) -> str:
     """Format stale findings as JSON."""
     items = []
     for s in findings:
-        obj = _sup_to_dict(s)
+        obj = sup_to_dict(s)
         obj["age_date"] = s.first_seen
         obj["age_days"] = age_in_days(s.first_seen) if s.first_seen else None
         items.append(obj)

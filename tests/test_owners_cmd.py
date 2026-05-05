@@ -8,7 +8,7 @@ from dont_be_lazy.commands.owners_cmd import attach_owners, format_owners_json, 
 from dont_be_lazy.models import RiskLevel, ScopeKind, Suppression
 
 
-def _suppression(line: int = 2, text: str = "value = 1  # noqa") -> Suppression:
+def suppression(line: int = 2, text: str = "value = 1  # noqa") -> Suppression:
     return Suppression(
         tool="ruff",
         kind="noqa-blanket",
@@ -39,14 +39,14 @@ def test_attach_owners_applies_owner_map(monkeypatch) -> None:
         lambda path, lines, root: {2: {"author": "Jane", "email": "jane@example.com", "date": "2024-01-01"}},
     )
 
-    findings = attach_owners([_suppression()], "C:\\repo", owner_map={"jane@example.com": "team-platform"})
+    findings = attach_owners([suppression()], "C:\\repo", owner_map={"jane@example.com": "team-platform"})
 
     assert findings[0].owner == "team-platform"
     assert findings[0].git_author == "Jane"
 
 
 def test_format_owners_supports_groupings() -> None:
-    finding = _suppression()
+    finding = suppression()
     finding.git_author = "Jane"
     finding.git_email = "jane@example.com"
     finding.owner = "team-platform"

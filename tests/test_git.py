@@ -15,7 +15,7 @@ def test_blame_line_parses_porcelain(monkeypatch) -> None:
             "\tvalue = 1  # noqa",
         ]
     )
-    monkeypatch.setattr(git, "_run", lambda args, cwd, timeout=15: output)
+    monkeypatch.setattr(git, "run", lambda args, cwd, timeout=15: output)
 
     info = git.blame_line("src\\mod.py", 2, "C:\\repo")
 
@@ -29,7 +29,7 @@ def test_blame_line_parses_porcelain(monkeypatch) -> None:
 def test_first_seen_by_log_uses_earliest_date(monkeypatch) -> None:
     monkeypatch.setattr(
         git,
-        "_run",
+        "run",
         lambda args, cwd, timeout=15: "2025-02-03 00:00:00 +0000\n2023-04-05 00:00:00 +0000\n",
     )
 
@@ -37,22 +37,23 @@ def test_first_seen_by_log_uses_earliest_date(monkeypatch) -> None:
 
 
 def test_changed_files_since_strips_blank_lines(monkeypatch) -> None:
-    monkeypatch.setattr(git, "_run", lambda args, cwd, timeout=15: "a.py\nb.py\n\n")
+    monkeypatch.setattr(git, "run", lambda args, cwd, timeout=15: "a.py\nb.py\n\n")
 
     assert git.changed_files_since("HEAD~1", "C:\\repo") == ["a.py", "b.py"]
 
 
 def test_run_real_git() -> None:
-    # Test _run with a real git command in the current repo
+    # Test run with a real git command in the current repo
     import os
-    res = git._run([git.GIT_BIN, "rev-parse", "--is-inside-work-tree"], cwd=os.getcwd())
+
+    res = git.run([git.GIT_BIN, "rev-parse", "--is-inside-work-tree"], cwd=os.getcwd())
     assert res and "true" in res.lower()
 
 
 def test_is_git_repo(monkeypatch) -> None:
-    monkeypatch.setattr(git, "_run", lambda args, cwd, timeout=15: "true" if "--git-dir" in args else None)
+    monkeypatch.setattr(git, "run", lambda args, cwd, timeout=15: "true" if "--git-dir" in args else None)
     assert git.is_git_repo(".") is True
-    monkeypatch.setattr(git, "_run", lambda args, cwd, timeout=15: None)
+    monkeypatch.setattr(git, "run", lambda args, cwd, timeout=15: None)
     assert git.is_git_repo(".") is False
 
 
@@ -71,7 +72,7 @@ def test_blame_lines_multiple(monkeypatch) -> None:
             "\tline 5",
         ]
     )
-    monkeypatch.setattr(git, "_run", lambda args, cwd, timeout=15: output)
+    monkeypatch.setattr(git, "run", lambda args, cwd, timeout=15: output)
 
     res = git.blame_lines("file.py", [2, 5], ".")
     assert res[2]["author"] == "Jane Dev"
@@ -85,7 +86,7 @@ def test_blame_lines_empty_input() -> None:
 
 
 def test_blame_lines_no_output(monkeypatch) -> None:
-    monkeypatch.setattr(git, "_run", lambda args, cwd, timeout=15: None)
+    monkeypatch.setattr(git, "run", lambda args, cwd, timeout=15: None)
     assert git.blame_lines("file.py", [1], ".") == {}
 
 
@@ -95,41 +96,43 @@ def test_first_seen_by_log_fallback(monkeypatch) -> None:
             return None  # First call fails
         return "2023-01-01 00:00:00 +0000"
 
-    monkeypatch.setattr(git, "_run", mock_run)
+    monkeypatch.setattr(git, "run", mock_run)
     assert git.first_seen_by_log("file.py", "text", ".") == "2023-01-01"
 
 
 def test_first_seen_by_log_no_dates(monkeypatch) -> None:
-    monkeypatch.setattr(git, "_run", lambda args, cwd, timeout=15: "not a date")
+    monkeypatch.setattr(git, "run", lambda args, cwd, timeout=15: "not a date")
     assert git.first_seen_by_log("file.py", "text", ".") is None
 
 
 def test_diff_hunks_since_no_output(monkeypatch) -> None:
-    monkeypatch.setattr(git, "_run", lambda args, cwd, timeout=15: None)
+    monkeypatch.setattr(git, "run", lambda args, cwd, timeout=15: None)
     assert git.diff_hunks_since("HEAD", "file.py", ".") == []
 
 
 def test_blame_line_no_output(monkeypatch) -> None:
-    monkeypatch.setattr(git, "_run", lambda args, cwd, timeout=15: None)
+    monkeypatch.setattr(git, "run", lambda args, cwd, timeout=15: None)
     assert git.blame_line("file.py", 1, ".") is None
 
 
 def test_first_seen_by_log_no_output(monkeypatch) -> None:
-    monkeypatch.setattr(git, "_run", lambda args, cwd, timeout=15: None)
+    monkeypatch.setattr(git, "run", lambda args, cwd, timeout=15: None)
     assert git.first_seen_by_log("file.py", "text", ".") is None
 
 
 def test_changed_files_since_no_output(monkeypatch) -> None:
-    monkeypatch.setattr(git, "_run", lambda args, cwd, timeout=15: None)
+    monkeypatch.setattr(git, "run", lambda args, cwd, timeout=15: None)
     assert git.changed_files_since("HEAD", ".") == []
 
 
 def test_run_exception(monkeypatch) -> None:
     import subprocess
+
     def mock_run(*args, **kwargs):
         raise OSError("spawn failed")
+
     monkeypatch.setattr(subprocess, "run", mock_run)
-    assert git._run(["git"], ".") is None
+    assert git.run(["git"], ".") is None
 
 
 def test_diff_hunks_since_parses_multiple_hunks(monkeypatch) -> None:
@@ -142,6 +145,6 @@ def test_diff_hunks_since_parses_multiple_hunks(monkeypatch) -> None:
             "+third",
         ]
     )
-    monkeypatch.setattr(git, "_run", lambda args, cwd, timeout=15: diff_output)
+    monkeypatch.setattr(git, "run", lambda args, cwd, timeout=15: diff_output)
 
     assert git.diff_hunks_since("HEAD~1", "src\\mod.py", "C:\\repo") == [(3, 4), (20, 20)]

@@ -3,26 +3,21 @@
 import importlib
 import json
 import os
-import subprocess
 import sys
 
-from dont_be_lazy.__about__ import __version__
-
-
 import pytest
+
+from dont_be_lazy.__about__ import __version__
 from dont_be_lazy.cli import main
 
-def _run_cli(monkeypatch, capsys, *args):
-    import sys
+
+def run_cli(monkeypatch, capsys, *args):
+
     monkeypatch.setattr(sys, "argv", ["dont_be_lazy", *args])
     with pytest.raises(SystemExit) as excinfo:
         main()
     captured = capsys.readouterr()
-    return type("Result", (), {
-        "returncode": excinfo.value.code,
-        "stdout": captured.out,
-        "stderr": captured.err
-    })
+    return type("Result", (), {"returncode": excinfo.value.code, "stdout": captured.out, "stderr": captured.err})
 
 
 def test_import() -> None:
@@ -38,7 +33,7 @@ def test_version() -> None:
 
 
 def test_cli_version(monkeypatch, capsys):
-    result = _run_cli(monkeypatch, capsys, "--version")
+    result = run_cli(monkeypatch, capsys, "--version")
     # --version usually exits with 0 and prints to stdout or stderr depending on argparse version
     assert result.returncode == 0
 
@@ -54,14 +49,14 @@ def test_cli_no_args_shows_help(monkeypatch, capsys):
 
 def test_cli_scan_fixture(monkeypatch, capsys):
     fixtures = os.path.join(os.path.dirname(__file__), "fixtures")
-    result = _run_cli(monkeypatch, capsys, "scan", fixtures, "--format", "table", "--no-respect-gitignore")
+    result = run_cli(monkeypatch, capsys, "scan", fixtures, "--format", "table", "--no-respect-gitignore")
     assert result.returncode in (0, 1)
     assert "ruff" in result.stdout or "mypy" in result.stdout or "No suppressions" in result.stdout
 
 
 def test_cli_scan_json_output(monkeypatch, capsys):
     fixtures = os.path.join(os.path.dirname(__file__), "fixtures")
-    result = _run_cli(monkeypatch, capsys, "scan", fixtures, "--format", "json", "--no-respect-gitignore")
+    result = run_cli(monkeypatch, capsys, "scan", fixtures, "--format", "json", "--no-respect-gitignore")
     assert result.returncode in (0, 1)
 
     doc = json.loads(result.stdout)
@@ -71,39 +66,41 @@ def test_cli_scan_json_output(monkeypatch, capsys):
 
 def test_cli_summary(monkeypatch, capsys):
     fixtures = os.path.join(os.path.dirname(__file__), "fixtures")
-    result = _run_cli(monkeypatch, capsys, "summary", fixtures, "--no-respect-gitignore")
+    result = run_cli(monkeypatch, capsys, "summary", fixtures, "--no-respect-gitignore")
     assert result.returncode == 0
 
 
 def test_cli_list_tools(monkeypatch, capsys):
-    result = _run_cli(monkeypatch, capsys, "list", "tools")
+    result = run_cli(monkeypatch, capsys, "list", "tools")
     assert result.returncode == 0
     assert "ruff" in result.stdout
     assert "mypy" in result.stdout
 
 
 def test_cli_list_checks(monkeypatch, capsys):
-    result = _run_cli(monkeypatch, capsys, "list", "checks", "--tool", "pytest")
+    result = run_cli(monkeypatch, capsys, "list", "checks", "--tool", "pytest")
     assert result.returncode == 0
     assert "pytest" in result.stdout
 
 
 def test_cli_config_suppressions(monkeypatch, capsys):
     fixtures = os.path.join(os.path.dirname(__file__), "fixtures")
-    result = _run_cli(monkeypatch, capsys, "--root", fixtures, "config-suppressions")
+    result = run_cli(monkeypatch, capsys, "--root", fixtures, "config-suppressions")
     assert result.returncode == 0
 
 
 def test_cli_fail_on_high(monkeypatch, capsys):
     fixtures = os.path.join(os.path.dirname(__file__), "fixtures")
-    result = _run_cli(monkeypatch, capsys, "scan", fixtures, "--format", "table", "--fail-on", "high", "--no-respect-gitignore")
+    result = run_cli(
+        monkeypatch, capsys, "scan", fixtures, "--format", "table", "--fail-on", "high", "--no-respect-gitignore"
+    )
     # Fixtures contain high-risk suppressions, so exit code should be 1
     assert result.returncode in (0, 1)
 
 
 def test_cli_stale_json(monkeypatch, capsys):
     fixtures = os.path.join(os.path.dirname(__file__), "fixtures")
-    result = _run_cli(monkeypatch, capsys, "stale", fixtures, "--format", "json", "--no-respect-gitignore")
+    result = run_cli(monkeypatch, capsys, "stale", fixtures, "--format", "json", "--no-respect-gitignore")
     assert result.returncode in (0, 1)
 
     doc = json.loads(result.stdout)
@@ -113,7 +110,7 @@ def test_cli_stale_json(monkeypatch, capsys):
 def test_cli_explain_by_location(monkeypatch, capsys):
     fixtures = os.path.join(os.path.dirname(__file__), "fixtures")
     target = os.path.join(fixtures, "sample_comments.py") + ":32"
-    result = _run_cli(monkeypatch, capsys, "explain", target)
+    result = run_cli(monkeypatch, capsys, "explain", target)
     assert result.returncode == 0
     assert "Matched:" in result.stdout
 
@@ -122,7 +119,7 @@ def test_cli_baseline_create_and_check(tmp_path, monkeypatch, capsys):
     fixtures = os.path.join(os.path.dirname(__file__), "fixtures")
     baseline_path = tmp_path / "baseline.json"
 
-    create = _run_cli(
+    create = run_cli(
         monkeypatch,
         capsys,
         "baseline",
@@ -132,7 +129,7 @@ def test_cli_baseline_create_and_check(tmp_path, monkeypatch, capsys):
         str(baseline_path),
         "--no-respect-gitignore",
     )
-    check = _run_cli(
+    check = run_cli(
         monkeypatch,
         capsys,
         "baseline",
@@ -148,6 +145,6 @@ def test_cli_baseline_create_and_check(tmp_path, monkeypatch, capsys):
 
 
 def test_cli_rules_list(monkeypatch, capsys):
-    result = _run_cli(monkeypatch, capsys, "rules", "list")
+    result = run_cli(monkeypatch, capsys, "rules", "list")
     assert result.returncode == 0
     assert "DBL001" in result.stdout

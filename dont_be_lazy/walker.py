@@ -29,7 +29,7 @@ DEFAULT_SKIP_DIRS = {
 DEFAULT_EXTENSIONS = {".py", ".pyi", ".toml", ".ini", ".cfg", ".yaml", ".yml", ".json"}
 
 
-def _gitignored_files(root: str) -> set[str] | None:
+def gitignored_files(root: str) -> set[str] | None:
     """Return set of repo-relative paths tracked by git, or None if not a git repo."""
     try:
         result = subprocess.run(  # nosec B603
@@ -60,7 +60,7 @@ def walk_paths(
 
     git_files: set[str] | None = None
     if respect_gitignore:
-        git_files = _gitignored_files(root)
+        git_files = gitignored_files(root)
 
     for dirpath, dirnames, filenames in os.walk(root):
         # Prune skip dirs in-place

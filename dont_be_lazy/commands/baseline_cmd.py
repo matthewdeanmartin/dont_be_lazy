@@ -6,13 +6,13 @@ import json
 from datetime import date
 from typing import Any, cast
 
-from dont_be_lazy.formatters.json_fmt import _sup_to_dict
+from dont_be_lazy.formatters.json_fmt import sup_to_dict
 from dont_be_lazy.models import Suppression
 
-_SCHEMA_VERSION = "1"
+SCHEMA_VERSION = "1"
 
 
-def _baseline_entry(s: Suppression) -> dict[str, Any]:
+def baseline_entry(s: Suppression) -> dict[str, Any]:
     """Build the persisted baseline entry for one suppression."""
     return {
         "id": s.id,
@@ -31,10 +31,10 @@ def _baseline_entry(s: Suppression) -> dict[str, Any]:
 def create_baseline(findings: list[Suppression]) -> dict[str, Any]:
     """Build baseline dict from current findings."""
     return {
-        "version": _SCHEMA_VERSION,
+        "version": SCHEMA_VERSION,
         "created_at": date.today().isoformat(),
         "count": len(findings),
-        "entries": [_baseline_entry(s) for s in findings],
+        "entries": [baseline_entry(s) for s in findings],
     }
 
 
@@ -106,7 +106,7 @@ def format_check_result(
             {
                 "new_count": len(new_findings),
                 "known_count": known_count,
-                "new_findings": [_sup_to_dict(s) for s in new_findings],
+                "new_findings": [sup_to_dict(s) for s in new_findings],
             },
             indent=2,
         )

@@ -13,7 +13,7 @@ from dont_be_lazy.commands.baseline_cmd import (
 from dont_be_lazy.models import RiskLevel, ScopeKind, Suppression
 
 
-def _suppression(path: str = "src\\mod.py", line: int = 2, text: str = "value = 1  # noqa") -> Suppression:
+def suppression(path: str = "src\\mod.py", line: int = 2, text: str = "value = 1  # noqa") -> Suppression:
     return Suppression(
         tool="ruff",
         kind="noqa-blanket",
@@ -31,7 +31,7 @@ def _suppression(path: str = "src\\mod.py", line: int = 2, text: str = "value = 
 
 
 def test_baseline_round_trip(tmp_path) -> None:
-    finding = _suppression()
+    finding = suppression()
     baseline = create_baseline([finding])
     baseline_path = tmp_path / "baseline.json"
 
@@ -43,9 +43,9 @@ def test_baseline_round_trip(tmp_path) -> None:
 
 
 def test_check_new_findings_distinguishes_known_and_new() -> None:
-    known = _suppression()
+    known = suppression()
     baseline = create_baseline([known])
-    new = _suppression(line=8, text="other = 2  # noqa")
+    new = suppression(line=8, text="other = 2  # noqa")
 
     new_findings, known_findings = check_new_findings([known, new], baseline)
 
@@ -54,8 +54,8 @@ def test_check_new_findings_distinguishes_known_and_new() -> None:
 
 
 def test_prune_baseline_removes_resolved_entries() -> None:
-    first = _suppression()
-    second = _suppression(line=8, text="other = 2  # noqa")
+    first = suppression()
+    second = suppression(line=8, text="other = 2  # noqa")
     baseline = create_baseline([first, second])
 
     pruned, removed = prune_baseline(baseline, [first])

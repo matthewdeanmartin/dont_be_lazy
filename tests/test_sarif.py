@@ -7,7 +7,7 @@ from dont_be_lazy.formatters.sarif import format_sarif
 from dont_be_lazy.models import RiskLevel, ScopeKind, Suppression
 
 
-def _sup(**kwargs):
+def sup(**kwargs):
     defaults: dict[str, Any] = {
         "tool": "ruff",
         "kind": "noqa-blanket",
@@ -34,7 +34,7 @@ def test_sarif_schema_version():
 
 
 def test_sarif_has_runs():
-    out = format_sarif([_sup()])
+    out = format_sarif([sup()])
     doc = json.loads(out)
     assert len(doc["runs"]) == 1
     run = doc["runs"][0]
@@ -43,14 +43,14 @@ def test_sarif_has_runs():
 
 
 def test_sarif_results_populated():
-    out = format_sarif([_sup(), _sup(tool="mypy", kind="type-ignore-blanket")])
+    out = format_sarif([sup(), sup(tool="mypy", kind="type-ignore-blanket")])
     doc = json.loads(out)
     results = doc["runs"][0]["results"]
     assert len(results) == 2
 
 
 def test_sarif_result_structure():
-    out = format_sarif([_sup()])
+    out = format_sarif([sup()])
     doc = json.loads(out)
     r = doc["runs"][0]["results"][0]
     assert "ruleId" in r
@@ -64,10 +64,10 @@ def test_sarif_result_structure():
 
 def test_sarif_severity_mapping():
     findings = [
-        _sup(risk=RiskLevel.low),
-        _sup(risk=RiskLevel.medium),
-        _sup(risk=RiskLevel.high),
-        _sup(risk=RiskLevel.critical),
+        sup(risk=RiskLevel.low),
+        sup(risk=RiskLevel.medium),
+        sup(risk=RiskLevel.high),
+        sup(risk=RiskLevel.critical),
     ]
     out = format_sarif(findings)
     doc = json.loads(out)
@@ -85,7 +85,7 @@ def test_sarif_empty_findings():
 
 def test_sarif_rules_deduped():
     # Two findings of same tool/kind → one rule entry
-    findings = [_sup(), _sup(line=20)]
+    findings = [sup(), sup(line=20)]
     out = format_sarif(findings)
     doc = json.loads(out)
     rules = doc["runs"][0]["tool"]["driver"]["rules"]

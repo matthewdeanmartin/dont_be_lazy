@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import importlib
 import os
+import subprocess
 from typing import Any, cast
 
 
-def _load_optional_module(*names: str) -> Any | None:
+def load_optional_module(*names: str) -> Any | None:
     """Import the first available module from *names*."""
     for name in names:
         try:
@@ -17,10 +18,28 @@ def _load_optional_module(*names: str) -> Any | None:
     return None
 
 
-tomllib = _load_optional_module("tomllib", "tomli")
+tomllib = load_optional_module("tomllib", "tomli")
 
 
-def _load_toml(path: str) -> dict[str, Any]:
+def find_root(explicit: str | None = None) -> str:
+    """Return the repository root or current directory."""
+    if explicit:
+        return os.path.abspath(explicit)
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        if result.returncode == 0:
+            return result.stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        pass
+    return os.getcwd()
+
+
+def load_toml(path: str) -> dict[str, Any]:
     """Load a TOML file into a dictionary."""
     if tomllib is None:
         return {}
@@ -31,7 +50,7 @@ def _load_toml(path: str) -> dict[str, Any]:
 def discover_config(root: str, explicit: str | None = None) -> dict[str, Any]:
     """Return the [tool.dont_be_lazy] config dict (or empty dict)."""
     if explicit:
-        data = _load_toml(explicit)
+        data = load_toml(explicit)
         tool_section = data.get("tool", {})
         if isinstance(tool_section, dict):
             dont_be_lazy_section = tool_section.get("dont_be_lazy")
@@ -46,7 +65,7 @@ def discover_config(root: str, explicit: str | None = None) -> dict[str, Any]:
     ]
     for path in candidates:
         if os.path.isfile(path):
-            data = _load_toml(path)
+            data = load_toml(path)
             tool_section = data.get("tool", {})
             section = tool_section.get("dont_be_lazy") if isinstance(tool_section, dict) else None
             if isinstance(section, dict):

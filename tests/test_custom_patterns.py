@@ -69,7 +69,7 @@ def test_invalid_regex_skipped():
         }
     }
     scanner = CustomPatternScanner(config)
-    assert not scanner._compiled
+    assert not scanner.compiled
 
 
 def test_empty_config():

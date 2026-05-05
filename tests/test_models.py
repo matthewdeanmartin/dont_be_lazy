@@ -5,7 +5,7 @@ from typing import Any
 from dont_be_lazy.models import RiskLevel, ScopeKind, Suppression
 
 
-def _make(**kwargs):
+def make(**kwargs):
     defaults: dict[str, Any] = {
         "tool": "ruff",
         "kind": "noqa-blanket",
@@ -25,25 +25,25 @@ def _make(**kwargs):
 
 
 def test_suppression_id_is_set():
-    s = _make()
+    s = make()
     assert s.id.startswith("DBL")
     assert len(s.id) == 11  # DBL + 8 hex chars
 
 
 def test_suppression_id_stable():
-    s1 = _make()
-    s2 = _make()
+    s1 = make()
+    s2 = make()
     assert s1.id == s2.id
 
 
 def test_fingerprint_stable():
-    s = _make()
+    s = make()
     assert s.fingerprint() == s.fingerprint()
 
 
 def test_fingerprint_differs_by_kind():
-    s1 = _make(kind="noqa-blanket")
-    s2 = _make(kind="noqa-specific")
+    s1 = make(kind="noqa-blanket")
+    s2 = make(kind="noqa-specific")
     assert s1.fingerprint() != s2.fingerprint()
 
 

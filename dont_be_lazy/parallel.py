@@ -9,7 +9,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from dont_be_lazy.models import Suppression
 
 
-def _scan_file(
+def scan_file(
     path: str,
     encoding: str,
     scan_comments: bool,
@@ -39,11 +39,12 @@ def _scan_file(
     return results
 
 
-def _scan_config_file(path: str) -> list[Suppression]:
+def scan_config_file(path: str) -> list[Suppression]:
+    """Worker: scan a single config file and return Suppression objects."""
     # pylint: disable=import-outside-toplevel
-    from dont_be_lazy.scanners.config import scan_config_file
+    from dont_be_lazy.scanners.config import scan_config_file as scanner_func
 
-    return scan_config_file(path)
+    return scanner_func(path)
 
 
 def parallel_scan_py(
@@ -63,11 +64,11 @@ def parallel_scan_py(
 
     if jobs <= 1 or len(py_paths) <= 1:
         for p in py_paths:
-            results.extend(_scan_file(p, encoding, scan_comments, scan_ast, cfg))
+            results.extend(scan_file(p, encoding, scan_comments, scan_ast, cfg))
         return results
 
     with ProcessPoolExecutor(max_workers=jobs) as executor:
-        futures = {executor.submit(_scan_file, p, encoding, scan_comments, scan_ast, cfg): p for p in py_paths}
+        futures = {executor.submit(scan_file, p, encoding, scan_comments, scan_ast, cfg): p for p in py_paths}
         for fut in as_completed(futures):
             with contextlib.suppress(Exception):
                 results.extend(fut.result())
@@ -85,11 +86,11 @@ def parallel_scan_configs(
     results: list[Suppression] = []
     if jobs <= 1 or len(config_paths) <= 1:
         for p in config_paths:
-            results.extend(_scan_config_file(p))
+            results.extend(scan_config_file(p))
         return results
 
     with ProcessPoolExecutor(max_workers=jobs) as executor:
-        futures = {executor.submit(_scan_config_file, p): p for p in config_paths}
+        futures = {executor.submit(scan_config_file, p): p for p in config_paths}
         for fut in as_completed(futures):
             with contextlib.suppress(Exception):
                 results.extend(fut.result())

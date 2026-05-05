@@ -11,7 +11,8 @@ from datetime import datetime, timezone
 GIT_BIN = shutil.which("git") or "git"
 
 
-def _run(args: list[str], cwd: str, timeout: int = 15) -> str | None:
+def run(args: list[str], cwd: str, timeout: int = 15) -> str | None:
+    """Run a git command and return its output."""
     try:
         result = subprocess.run(  # nosec B603
             args,
@@ -30,12 +31,12 @@ def _run(args: list[str], cwd: str, timeout: int = 15) -> str | None:
 
 def is_git_repo(path: str) -> bool:
     """Return True when *path* is inside a Git repository."""
-    return _run([GIT_BIN, "rev-parse", "--git-dir"], cwd=path) is not None
+    return run([GIT_BIN, "rev-parse", "--git-dir"], cwd=path) is not None
 
 
 def blame_line(path: str, line: int, cwd: str) -> dict[str, str] | None:
     """Return {'author': ..., 'email': ..., 'date': 'YYYY-MM-DD'} for a line, or None."""
-    out = _run(
+    out = run(
         [GIT_BIN, "blame", "-L", f"{line},{line}", "--porcelain", path],
         cwd=cwd,
     )
@@ -59,7 +60,7 @@ def blame_lines(path: str, lines: list[int], cwd: str) -> dict[int, dict[str, st
     if not lines:
         return {}
     lo, hi = min(lines), max(lines)
-    out = _run(
+    out = run(
         [GIT_BIN, "blame", "-L", f"{lo},{hi}", "--porcelain", path],
         cwd=cwd,
     )
@@ -99,14 +100,14 @@ def first_seen_by_log(path: str, text: str, cwd: str) -> str | None:
     Returns 'YYYY-MM-DD' or None.
     """
     # Use -S to find commits that added/removed the text
-    out = _run(
+    out = run(
         [GIT_BIN, "log", "--diff-filter=A", "--follow", "--format=%ai", "-S", text, "--", path],
         cwd=cwd,
         timeout=30,
     )
     if not out:
         # Fall back: any commit touching that text
-        out = _run(
+        out = run(
             [GIT_BIN, "log", "--format=%ai", "-S", text, "--", path],
             cwd=cwd,
             timeout=30,
@@ -126,7 +127,7 @@ def first_seen_by_log(path: str, text: str, cwd: str) -> str | None:
 
 def changed_files_since(ref: str, cwd: str) -> list[str]:
     """Return list of file paths changed since `ref` (git diff --name-only REF)."""
-    out = _run([GIT_BIN, "diff", "--name-only", ref], cwd=cwd)
+    out = run([GIT_BIN, "diff", "--name-only", ref], cwd=cwd)
     if not out:
         return []
     return [p.strip() for p in out.splitlines() if p.strip()]
@@ -134,7 +135,7 @@ def changed_files_since(ref: str, cwd: str) -> list[str]:
 
 def diff_hunks_since(ref: str, path: str, cwd: str) -> list[tuple[int, int]]:
     """Return list of (start_line, end_line) hunks changed in path since ref."""
-    out = _run([GIT_BIN, "diff", "-U0", ref, "--", path], cwd=cwd)
+    out = run([GIT_BIN, "diff", "-U0", ref, "--", path], cwd=cwd)
     if not out:
         return []
     hunks: list[tuple[int, int]] = []

@@ -14,7 +14,7 @@ class CustomPatternScanner:
     """Scans for user-defined suppression patterns from config."""
 
     def __init__(self, patterns_config: dict[str, Any]) -> None:
-        self._compiled: list[tuple[str, ScopeKind, RiskLevel, re.Pattern[str]]] = []
+        self.compiled: list[tuple[str, ScopeKind, RiskLevel, re.Pattern[str]]] = []
         for tool_name, entry in patterns_config.items():
             if isinstance(entry, dict):
                 raw_patterns = entry.get("patterns", [])
@@ -36,13 +36,13 @@ class CustomPatternScanner:
             for raw in raw_patterns:
                 try:
                     compiled = re.compile(raw)
-                    self._compiled.append((tool_name, scope, risk, compiled))
+                    self.compiled.append((tool_name, scope, risk, compiled))
                 except re.error:
                     pass  # Invalid regex — skip silently
 
     def scan(self, path: str, source: str) -> list[Suppression]:
         """Scan source comments for configured custom suppression patterns."""
-        if not self._compiled:
+        if not self.compiled:
             return []
 
         results: list[Suppression] = []
@@ -53,13 +53,13 @@ class CustomPatternScanner:
         except tokenize.TokenError:
             return results
 
-        for tok_type, tok_string, tok_start, _tok_end, _line in tokens:
+        for tok_type, tok_string, tok_start, _, _ in tokens:
             if tok_type != tokenize.COMMENT:
                 continue
             line_no = tok_start[0]
             src_line = source_lines[line_no - 1] if line_no <= len(source_lines) else ""
 
-            for tool_name, scope, risk, pattern in self._compiled:
+            for tool_name, scope, risk, pattern in self.compiled:
                 m = pattern.search(tok_string)
                 if not m:
                     continue

@@ -11,7 +11,7 @@ from dont_be_lazy.commands.explain_cmd import (
 from dont_be_lazy.models import RiskLevel, ScopeKind, Suppression
 
 
-def _suppression() -> Suppression:
+def suppression() -> Suppression:
     return Suppression(
         tool="mypy",
         kind="type-ignore-specific",
@@ -29,7 +29,7 @@ def _suppression() -> Suppression:
 
 
 def test_explain_text_includes_review_prompts() -> None:
-    output = explain_suppression(_suppression())
+    output = explain_suppression(suppression())
 
     assert "Matched: mypy" in output
     assert "Review:" in output
@@ -37,7 +37,7 @@ def test_explain_text_includes_review_prompts() -> None:
 
 
 def test_explain_json_marks_code_specific() -> None:
-    payload = explain_suppression_json(_suppression())
+    payload = explain_suppression_json(suppression())
 
     assert payload["finding"]["tool"] == "mypy"
     assert payload["code_specific"] is True
@@ -45,7 +45,7 @@ def test_explain_json_marks_code_specific() -> None:
 
 
 def test_find_helpers_locate_suppression() -> None:
-    finding = _suppression()
+    finding = suppression()
     findings = [finding]
 
     assert find_suppression_by_id(findings, finding.id) is finding

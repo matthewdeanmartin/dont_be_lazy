@@ -9,7 +9,7 @@ from dont_be_lazy.models import RiskLevel, ScopeKind, Suppression
 from dont_be_lazy.policy import PolicyViolation
 
 
-def _suppression() -> Suppression:
+def suppression() -> Suppression:
     return Suppression(
         tool="ruff",
         kind="noqa-blanket",
@@ -46,14 +46,14 @@ def test_format_rules_list_supports_table() -> None:
 
 
 def test_format_rules_test_supports_table() -> None:
-    violation = PolicyViolation("DBL001", "Blanket inline suppression", _suppression())
+    violation = PolicyViolation("DBL001", "Blanket inline suppression", suppression())
     output = format_rules_test([violation], "table")
     assert "1 policy violation(s) found" in output
     assert "DBL001" in output
 
 
 def test_format_rules_test_long_path() -> None:
-    s = _suppression()
+    s = suppression()
     s.path = "a" * 60 + "/mod.py"
     violation = PolicyViolation("DBL001", "Blanket inline suppression", s)
     output = format_rules_test([violation], "table")

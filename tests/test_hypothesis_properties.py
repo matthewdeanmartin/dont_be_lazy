@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import string
 
-import pytest
 from hypothesis import assume, given, settings
 from hypothesis import strategies as st
 
@@ -171,7 +170,6 @@ def test_fingerprint_is_64_hex_chars(s: Suppression):
 def test_different_text_different_fingerprint(text_a: str, text_b: str):
     """Two suppressions with different normalized text should (almost always) differ."""
     # Normalize ourselves to compare
-    import hashlib
 
     def norm(t):
         return " ".join(t.strip().split())
@@ -325,7 +323,7 @@ def test_score_monotone_with_unclosed_flag(s: Suppression):
         codes=list(s.codes),
         reason=s.reason,
         risk=s.risk,
-        flags=list(s.flags) + ["unclosed-block-suppression"],
+        flags=[*list(s.flags), "unclosed-block-suppression"],
         text=s.text,
     )
     assert score(with_flag) >= score(without)

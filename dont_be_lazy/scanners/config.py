@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import configparser
+import contextlib
 import importlib
 import json
 import os
@@ -11,7 +12,7 @@ from typing import Any, cast
 from dont_be_lazy.models import RiskLevel, ScopeKind, Suppression
 
 
-def _load_optional_module(*names: str) -> Any | None:
+def load_optional_module(*names: str) -> Any | None:
     """Import the first available module from *names*."""
     for name in names:
         try:
@@ -21,12 +22,12 @@ def _load_optional_module(*names: str) -> Any | None:
     return None
 
 
-tomllib = _load_optional_module("tomllib", "tomli")
-yaml = _load_optional_module("yaml")
-_HAS_YAML = yaml is not None
+tomllib = load_optional_module("tomllib", "tomli")
+yaml = load_optional_module("yaml")
+HAS_YAML = yaml is not None
 
 
-def _make(
+def make(
     tool: str,
     kind: str,
     path: str,
@@ -36,6 +37,7 @@ def _make(
     codes: list[str] | None = None,
     flags: list[str] | None = None,
 ) -> Suppression:
+    """Create a new Suppression object for a config-file match."""
     return Suppression(
         tool=tool,
         kind=kind,
@@ -57,14 +59,15 @@ def _make(
 # ---------------------------------------------------------------------------
 
 
-def _scan_ruff_toml(path: str, data: dict[str, Any]) -> list[Suppression]:
+def scan_ruff_toml(path: str, data: dict[str, Any]) -> list[Suppression]:
+    """Scan Ruff TOML configuration for ignore and exclude settings."""
     results: list[Suppression] = []
     ruff = data.get("tool", {}).get("ruff", data.get("ruff", {}))
     lint = ruff.get("lint", {})
 
     if lint.get("ignore"):
         results.append(
-            _make(
+            make(
                 "ruff",
                 "config-ignore",
                 path,
@@ -76,7 +79,7 @@ def _scan_ruff_toml(path: str, data: dict[str, Any]) -> list[Suppression]:
         )
     if lint.get("extend-ignore"):
         results.append(
-            _make(
+            make(
                 "ruff",
                 "config-ignore",
                 path,
@@ -90,7 +93,7 @@ def _scan_ruff_toml(path: str, data: dict[str, Any]) -> list[Suppression]:
     for pattern, ignored in pfi.items():
         codes = ignored if isinstance(ignored, list) else [ignored]
         results.append(
-            _make(
+            make(
                 "ruff",
                 "per-file-ignores",
                 path,
@@ -102,11 +105,11 @@ def _scan_ruff_toml(path: str, data: dict[str, Any]) -> list[Suppression]:
         )
     if ruff.get("exclude"):
         results.append(
-            _make("ruff", "config-exclude", path, "exclude", ruff["exclude"], risk=RiskLevel.medium, codes=[])
+            make("ruff", "config-exclude", path, "exclude", ruff["exclude"], risk=RiskLevel.medium, codes=[])
         )
     if ruff.get("extend-exclude"):
         results.append(
-            _make(
+            make(
                 "ruff",
                 "config-exclude",
                 path,
@@ -119,24 +122,25 @@ def _scan_ruff_toml(path: str, data: dict[str, Any]) -> list[Suppression]:
     return results
 
 
-def _scan_mypy_toml(path: str, data: dict[str, Any]) -> list[Suppression]:
+def scan_mypy_toml(path: str, data: dict[str, Any]) -> list[Suppression]:
+    """Scan MyPy TOML configuration for ignore and exclude settings."""
     results: list[Suppression] = []
     mypy = data.get("tool", {}).get("mypy", {})
 
     if mypy.get("ignore_missing_imports"):
         results.append(
-            _make("mypy", "ignore-missing-imports", path, "ignore_missing_imports", True, risk=RiskLevel.medium)
+            make("mypy", "ignore-missing-imports", path, "ignore_missing_imports", True, risk=RiskLevel.medium)
         )
     if mypy.get("disable_error_code"):
         codes = mypy["disable_error_code"]
         if isinstance(codes, str):
             codes = [codes]
         results.append(
-            _make("mypy", "config-disable-code", path, "disable_error_code", codes, risk=RiskLevel.medium, codes=codes)
+            make("mypy", "config-disable-code", path, "disable_error_code", codes, risk=RiskLevel.medium, codes=codes)
         )
     if mypy.get("exclude"):
         results.append(
-            _make("mypy", "config-exclude", path, "exclude", mypy["exclude"], risk=RiskLevel.medium, codes=[])
+            make("mypy", "config-exclude", path, "exclude", mypy["exclude"], risk=RiskLevel.medium, codes=[])
         )
 
     for override in mypy.get("overrides", []):
@@ -145,7 +149,7 @@ def _scan_mypy_toml(path: str, data: dict[str, Any]) -> list[Suppression]:
             if isinstance(modules, str):
                 modules = [modules]
             results.append(
-                _make(
+                make(
                     "mypy",
                     "ignore-errors-config",
                     path,
@@ -160,7 +164,7 @@ def _scan_mypy_toml(path: str, data: dict[str, Any]) -> list[Suppression]:
             if isinstance(modules, str):
                 modules = [modules]
             results.append(
-                _make(
+                make(
                     "mypy",
                     "ignore-missing-imports",
                     path,
@@ -173,7 +177,8 @@ def _scan_mypy_toml(path: str, data: dict[str, Any]) -> list[Suppression]:
     return results
 
 
-def _scan_pytest_toml(path: str, data: dict[str, Any]) -> list[Suppression]:
+def scan_pytest_toml(path: str, data: dict[str, Any]) -> list[Suppression]:
+    """Scan Pytest TOML configuration for marker-based exclusions."""
     results: list[Suppression] = []
     opts = data.get("tool", {}).get("pytest", {}).get("ini_options", {})
     addopts = opts.get("addopts", "")
@@ -181,7 +186,7 @@ def _scan_pytest_toml(path: str, data: dict[str, Any]) -> list[Suppression]:
         addopts = " ".join(addopts)
     if "-m" in addopts and "not" in addopts:
         results.append(
-            _make(
+            make(
                 "pytest",
                 "addopts-marker",
                 path,
@@ -195,7 +200,8 @@ def _scan_pytest_toml(path: str, data: dict[str, Any]) -> list[Suppression]:
     return results
 
 
-def _scan_coverage_toml(path: str, data: dict[str, Any]) -> list[Suppression]:
+def scan_coverage_toml(path: str, data: dict[str, Any]) -> list[Suppression]:
+    """Scan Coverage TOML configuration for omit and exclude settings."""
     results: list[Suppression] = []
     cov = data.get("tool", {}).get("coverage", {})
     run = cov.get("run", {})
@@ -205,44 +211,46 @@ def _scan_coverage_toml(path: str, data: dict[str, Any]) -> list[Suppression]:
     if omit:
         src_omit = [p for p in omit if not p.startswith("test")]
         risk = RiskLevel.critical if src_omit else RiskLevel.medium
-        results.append(_make("coverage", "omit-broad", path, "run.omit", omit, risk=risk, codes=[]))
+        results.append(make("coverage", "omit-broad", path, "run.omit", omit, risk=risk, codes=[]))
     excl = report.get("exclude_lines", []) + report.get("exclude_also", [])
     if excl:
         results.append(
-            _make("coverage", "exclude-lines-broad", path, "report.exclude_lines", excl, risk=RiskLevel.high, codes=[])
+            make("coverage", "exclude-lines-broad", path, "report.exclude_lines", excl, risk=RiskLevel.high, codes=[])
         )
     return results
 
 
-def _scan_bandit_toml(path: str, data: dict[str, Any]) -> list[Suppression]:
+def scan_bandit_toml(path: str, data: dict[str, Any]) -> list[Suppression]:
+    """Scan Bandit TOML configuration for skip and exclude settings."""
     results: list[Suppression] = []
     bandit = data.get("tool", {}).get("bandit", {})
     skips = bandit.get("skips", [])
     if skips:
-        results.append(_make("bandit", "config-skip", path, "skips", skips, risk=RiskLevel.high, codes=skips))
+        results.append(make("bandit", "config-skip", path, "skips", skips, risk=RiskLevel.high, codes=skips))
     excl = bandit.get("exclude_dirs", [])
     if excl:
-        results.append(_make("bandit", "config-exclude", path, "exclude_dirs", excl, risk=RiskLevel.medium, codes=[]))
+        results.append(make("bandit", "config-exclude", path, "exclude_dirs", excl, risk=RiskLevel.medium, codes=[]))
     return results
 
 
-def _scan_vulture_toml(path: str, data: dict[str, Any]) -> list[Suppression]:
+def scan_vulture_toml(path: str, data: dict[str, Any]) -> list[Suppression]:
+    """Scan Vulture TOML configuration for ignore and exclude settings."""
     results: list[Suppression] = []
     vulture = data.get("tool", {}).get("vulture", {})
     if vulture.get("exclude"):
         results.append(
-            _make("vulture", "config-exclude", path, "exclude", vulture["exclude"], risk=RiskLevel.medium, codes=[])
+            make("vulture", "config-exclude", path, "exclude", vulture["exclude"], risk=RiskLevel.medium, codes=[])
         )
     ignore_names = vulture.get("ignore_names", [])
     if ignore_names:
         risk = RiskLevel.critical if any("*" in n for n in ignore_names) else RiskLevel.medium
         results.append(
-            _make("vulture", "ignore-names", path, "ignore_names", ignore_names, risk=risk, codes=ignore_names)
+            make("vulture", "ignore-names", path, "ignore_names", ignore_names, risk=risk, codes=ignore_names)
         )
     ignore_decs = vulture.get("ignore_decorators", [])
     if ignore_decs:
         results.append(
-            _make(
+            make(
                 "vulture",
                 "ignore-decorators",
                 path,
@@ -255,7 +263,8 @@ def _scan_vulture_toml(path: str, data: dict[str, Any]) -> list[Suppression]:
     return results
 
 
-def _scan_pip_audit_toml(path: str, data: dict[str, Any]) -> list[Suppression]:
+def scan_pip_audit_toml(path: str, data: dict[str, Any]) -> list[Suppression]:
+    """Scan pip-audit TOML configuration for ignored vulnerabilities."""
     results: list[Suppression] = []
     pip_audit = data.get("tool", {}).get("pip-audit", {})
     ignore_vulns = pip_audit.get("ignore-vulns", [])
@@ -263,7 +272,7 @@ def _scan_pip_audit_toml(path: str, data: dict[str, Any]) -> list[Suppression]:
         ignore_vulns = [ignore_vulns]
     for vuln in ignore_vulns:
         results.append(
-            _make(
+            make(
                 "pip-audit",
                 "ignored-vulnerability",
                 path,
@@ -277,7 +286,8 @@ def _scan_pip_audit_toml(path: str, data: dict[str, Any]) -> list[Suppression]:
     return results
 
 
-def _scan_pydocstyle_toml(path: str, data: dict[str, Any]) -> list[Suppression]:
+def scan_pydocstyle_toml(path: str, data: dict[str, Any]) -> list[Suppression]:
+    """Scan pydocstyle TOML configuration for ignored rules."""
     results: list[Suppression] = []
     for tool_key in ("pydocstyle", "pydoclint"):
         section = data.get("tool", {}).get(tool_key, {})
@@ -286,7 +296,7 @@ def _scan_pydocstyle_toml(path: str, data: dict[str, Any]) -> list[Suppression]:
             ignore = [ignore]
         if ignore:
             results.append(
-                _make(
+                make(
                     tool_key,
                     "config-ignore",
                     path,
@@ -299,19 +309,18 @@ def _scan_pydocstyle_toml(path: str, data: dict[str, Any]) -> list[Suppression]:
     return results
 
 
-def _scan_isort_toml(path: str, data: dict[str, Any]) -> list[Suppression]:
+def scan_isort_toml(path: str, data: dict[str, Any]) -> list[Suppression]:
+    """Scan isort TOML configuration for skip and ignore settings."""
     results: list[Suppression] = []
     isort = data.get("tool", {}).get("isort", {})
     if isort.get("honor_noqa"):
-        results.append(_make("isort", "honor-noqa", path, "honor_noqa", True, risk=RiskLevel.medium, codes=[]))
+        results.append(make("isort", "honor-noqa", path, "honor_noqa", True, risk=RiskLevel.medium, codes=[]))
     skip = isort.get("skip", [])
     if skip:
-        results.append(_make("isort", "config-skip", path, "skip", skip, risk=RiskLevel.medium, codes=[]))
+        results.append(make("isort", "config-skip", path, "skip", skip, risk=RiskLevel.medium, codes=[]))
     skip_glob = isort.get("skip_glob", [])
     if skip_glob:
-        results.append(
-            _make("isort", "config-skip-glob", path, "skip_glob", skip_glob, risk=RiskLevel.medium, codes=[])
-        )
+        results.append(make("isort", "config-skip-glob", path, "skip_glob", skip_glob, risk=RiskLevel.medium, codes=[]))
     return results
 
 
@@ -326,15 +335,15 @@ def scan_toml(path: str) -> list[Suppression]:
         return []
 
     results: list[Suppression] = []
-    results.extend(_scan_ruff_toml(path, data))
-    results.extend(_scan_mypy_toml(path, data))
-    results.extend(_scan_pytest_toml(path, data))
-    results.extend(_scan_coverage_toml(path, data))
-    results.extend(_scan_bandit_toml(path, data))
-    results.extend(_scan_vulture_toml(path, data))
-    results.extend(_scan_pip_audit_toml(path, data))
-    results.extend(_scan_pydocstyle_toml(path, data))
-    results.extend(_scan_isort_toml(path, data))
+    results.extend(scan_ruff_toml(path, data))
+    results.extend(scan_mypy_toml(path, data))
+    results.extend(scan_pytest_toml(path, data))
+    results.extend(scan_coverage_toml(path, data))
+    results.extend(scan_bandit_toml(path, data))
+    results.extend(scan_vulture_toml(path, data))
+    results.extend(scan_pip_audit_toml(path, data))
+    results.extend(scan_pydocstyle_toml(path, data))
+    results.extend(scan_isort_toml(path, data))
     return results
 
 
@@ -343,18 +352,17 @@ def scan_toml(path: str) -> list[Suppression]:
 # ---------------------------------------------------------------------------
 
 
-def _read_ini(path: str) -> configparser.RawConfigParser:
+def read_ini(path: str) -> configparser.RawConfigParser:
+    """Read an INI file and return a RawConfigParser."""
     cp = configparser.RawConfigParser()
-    try:
+    with contextlib.suppress(configparser.Error):
         cp.read(path, encoding="utf-8")
-    except configparser.Error:
-        pass
     return cp
 
 
 def scan_flake8_ini(path: str) -> list[Suppression]:
     """Scan a Flake8-style INI file for suppression settings."""
-    cp = _read_ini(path)
+    cp = read_ini(path)
     results: list[Suppression] = []
     for section in ("flake8",):
         if not cp.has_section(section):
@@ -364,14 +372,14 @@ def scan_flake8_ini(path: str) -> list[Suppression]:
                 val = cp.get(section, key)
                 codes = [c.strip() for c in val.replace(",", "\n").splitlines() if c.strip()]
                 results.append(
-                    _make(
+                    make(
                         "flake8", "config-ignore", path, f"[{section}].{key}", codes, risk=RiskLevel.medium, codes=codes
                     )
                 )
         if cp.has_option(section, "per-file-ignores"):
             val = cp.get(section, "per-file-ignores")
             results.append(
-                _make(
+                make(
                     "flake8",
                     "per-file-ignores",
                     path,
@@ -384,14 +392,14 @@ def scan_flake8_ini(path: str) -> list[Suppression]:
         if cp.has_option(section, "exclude"):
             val = cp.get(section, "exclude")
             results.append(
-                _make("flake8", "config-exclude", path, f"[{section}].exclude", val, risk=RiskLevel.medium, codes=[])
+                make("flake8", "config-exclude", path, f"[{section}].exclude", val, risk=RiskLevel.medium, codes=[])
             )
     return results
 
 
 def scan_pylint_ini(path: str) -> list[Suppression]:
     """Scan a pylint INI/RC file for disabled checks."""
-    cp = _read_ini(path)
+    cp = read_ini(path)
     results: list[Suppression] = []
     for section in ("MESSAGES CONTROL", "messages_control", "pylint.messages_control"):
         if not cp.has_section(section):
@@ -401,21 +409,21 @@ def scan_pylint_ini(path: str) -> list[Suppression]:
             codes = [c.strip() for c in val.replace(",", "\n").splitlines() if c.strip()]
             risk = RiskLevel.critical if "all" in codes else RiskLevel.high
             results.append(
-                _make("pylint", "config-disable", path, f"[{section}].disable", codes, risk=risk, codes=codes)
+                make("pylint", "config-disable", path, f"[{section}].disable", codes, risk=risk, codes=codes)
             )
     return results
 
 
 def scan_mypy_ini(path: str) -> list[Suppression]:
     """Scan a mypy INI file for broad ignore settings."""
-    cp = _read_ini(path)
+    cp = read_ini(path)
     results: list[Suppression] = []
     if cp.has_section("mypy"):
         if cp.has_option("mypy", "ignore_missing_imports"):
             val = cp.get("mypy", "ignore_missing_imports")
             if val.lower() in ("true", "1", "yes"):
                 results.append(
-                    _make(
+                    make(
                         "mypy",
                         "ignore-missing-imports",
                         path,
@@ -428,7 +436,7 @@ def scan_mypy_ini(path: str) -> list[Suppression]:
             val = cp.get("mypy", "disable_error_code")
             codes = [c.strip() for c in val.split(",") if c.strip()]
             results.append(
-                _make(
+                make(
                     "mypy",
                     "config-disable-code",
                     path,
@@ -444,7 +452,7 @@ def scan_mypy_ini(path: str) -> list[Suppression]:
             val = cp.get(section, "ignore_errors")
             if val.lower() in ("true", "1", "yes"):
                 results.append(
-                    _make(
+                    make(
                         "mypy",
                         "ignore-errors-config",
                         path,
@@ -459,13 +467,13 @@ def scan_mypy_ini(path: str) -> list[Suppression]:
 
 def scan_coveragerc(path: str) -> list[Suppression]:
     """Scan a coverage configuration file for omit/exclude directives."""
-    cp = _read_ini(path)
+    cp = read_ini(path)
     results: list[Suppression] = []
     if cp.has_section("run") and cp.has_option("run", "omit"):
         val = cp.get("run", "omit")
         lines = [entry.strip() for entry in val.splitlines() if entry.strip()]
         results.append(
-            _make(
+            make(
                 "coverage",
                 "omit-broad",
                 path,
@@ -479,7 +487,7 @@ def scan_coveragerc(path: str) -> list[Suppression]:
         val = cp.get("report", "exclude_lines")
         lines = [entry.strip() for entry in val.splitlines() if entry.strip()]
         results.append(
-            _make(
+            make(
                 "coverage", "exclude-lines-broad", path, "[report].exclude_lines", lines, risk=RiskLevel.high, codes=[]
             )
         )
@@ -502,15 +510,15 @@ def scan_pyrightconfig(path: str) -> list[Suppression]:
     results: list[Suppression] = []
     if data.get("typeCheckingMode") == "off":
         results.append(
-            _make("pyright", "type-checking-off", path, "typeCheckingMode", "off", risk=RiskLevel.critical, codes=[])
+            make("pyright", "type-checking-off", path, "typeCheckingMode", "off", risk=RiskLevel.critical, codes=[])
         )
     for key in ("exclude", "ignore"):
         if data.get(key):
-            results.append(_make("pyright", "config-exclude", path, key, data[key], risk=RiskLevel.medium, codes=[]))
+            results.append(make("pyright", "config-exclude", path, key, data[key], risk=RiskLevel.medium, codes=[]))
     # Diagnostics set to "none"
     for k, v in data.items():
         if isinstance(v, str) and v == "none" and k.startswith("report"):
-            results.append(_make("pyright", "diagnostic-none", path, k, "none", risk=RiskLevel.medium, codes=[k]))
+            results.append(make("pyright", "diagnostic-none", path, k, "none", risk=RiskLevel.medium, codes=[k]))
     return results
 
 
@@ -521,26 +529,26 @@ def scan_pyrightconfig(path: str) -> list[Suppression]:
 
 def scan_pytype_cfg(path: str) -> list[Suppression]:
     """Scan pytype.cfg for disabled diagnostics and excludes."""
-    cp = _read_ini(path)
+    cp = read_ini(path)
     results: list[Suppression] = []
     if cp.has_section("pytype"):
         if cp.has_option("pytype", "disable"):
             val = cp.get("pytype", "disable")
             codes = [c.strip() for c in val.split(",") if c.strip()]
             results.append(
-                _make("pytype", "config-disable", path, "[pytype].disable", codes, risk=RiskLevel.medium, codes=codes)
+                make("pytype", "config-disable", path, "[pytype].disable", codes, risk=RiskLevel.medium, codes=codes)
             )
         if cp.has_option("pytype", "exclude"):
             val = cp.get("pytype", "exclude")
             results.append(
-                _make("pytype", "config-exclude", path, "[pytype].exclude", val, risk=RiskLevel.medium, codes=[])
+                make("pytype", "config-exclude", path, "[pytype].exclude", val, risk=RiskLevel.medium, codes=[])
             )
     return results
 
 
 def scan_safety_yaml(path: str) -> list[Suppression]:
     """Scan Safety YAML policy files for ignored vulnerability entries."""
-    if not _HAS_YAML:
+    if not HAS_YAML:
         return []
     assert yaml is not None
     try:
@@ -560,7 +568,7 @@ def scan_safety_yaml(path: str) -> list[Suppression]:
             has_expiry = isinstance(details, dict) and details.get("expires")
             risk = RiskLevel.high if has_expiry else RiskLevel.critical
             results.append(
-                _make(
+                make(
                     "safety",
                     "ignored-vulnerability",
                     path,
@@ -574,7 +582,7 @@ def scan_safety_yaml(path: str) -> list[Suppression]:
     elif isinstance(ignore_section, list):
         for vuln_id in ignore_section:
             results.append(
-                _make(
+                make(
                     "safety",
                     "ignored-vulnerability",
                     path,
@@ -590,7 +598,7 @@ def scan_safety_yaml(path: str) -> list[Suppression]:
 
 def scan_bandit_yaml(path: str) -> list[Suppression]:
     """Scan Bandit YAML config files for skips and excludes."""
-    if not _HAS_YAML:
+    if not HAS_YAML:
         return []
     assert yaml is not None
     try:
@@ -607,11 +615,11 @@ def scan_bandit_yaml(path: str) -> list[Suppression]:
     skips = data.get("skips", [])
     if skips:
         results.append(
-            _make("bandit", "config-skip", path, "skips", skips, risk=RiskLevel.high, codes=[str(s) for s in skips])
+            make("bandit", "config-skip", path, "skips", skips, risk=RiskLevel.high, codes=[str(s) for s in skips])
         )
     excl = data.get("exclude_dirs", [])
     if excl:
-        results.append(_make("bandit", "config-exclude", path, "exclude_dirs", excl, risk=RiskLevel.medium, codes=[]))
+        results.append(make("bandit", "config-exclude", path, "exclude_dirs", excl, risk=RiskLevel.medium, codes=[]))
     return results
 
 
@@ -619,7 +627,7 @@ def scan_bandit_yaml(path: str) -> list[Suppression]:
 # Dispatcher
 # ---------------------------------------------------------------------------
 
-_CONFIG_FILENAMES = {
+CONFIG_FILENAMES = {
     "pyproject.toml": scan_toml,
     "ruff.toml": scan_toml,
     ".ruff.toml": scan_toml,
@@ -643,19 +651,19 @@ _CONFIG_FILENAMES = {
 def scan_config_file(path: str) -> list[Suppression]:
     """Dispatch to the appropriate config scanner based on filename."""
     name = os.path.basename(path)
-    scanner = _CONFIG_FILENAMES.get(name)
+    scanner = CONFIG_FILENAMES.get(name)
     if scanner:
         return scanner(path)
     return []
 
 
-_VULTURE_WHITELIST_NAMES = {"vulture_whitelist.py", "whitelist.py", "dead_code_whitelist.py"}
+VULTURE_WHITELIST_NAMES = {"vulture_whitelist.py", "whitelist.py", "dead_code_whitelist.py"}
 
 
 def scan_vulture_whitelist(path: str) -> list[Suppression]:
     """Flag a likely vulture whitelist file as a broad dead-code suppression."""
     return [
-        _make(
+        make(
             "vulture",
             "whitelist-file",
             path,
@@ -671,15 +679,15 @@ def scan_vulture_whitelist(path: str) -> list[Suppression]:
 def find_and_scan_configs(root: str) -> list[Suppression]:
     """Locate known config files under root and scan them."""
     results: list[Suppression] = []
-    for name in _CONFIG_FILENAMES:
+    for name in CONFIG_FILENAMES:
         path = os.path.join(root, name)
         if os.path.isfile(path):
             results.extend(scan_config_file(path))
 
     # Vulture whitelist files anywhere under root
-    for dirpath, _dirnames, filenames in os.walk(root):
+    for dirpath, _, filenames in os.walk(root):
         for fn in filenames:
-            if fn in _VULTURE_WHITELIST_NAMES:
+            if fn in VULTURE_WHITELIST_NAMES:
                 results.extend(scan_vulture_whitelist(os.path.join(dirpath, fn)))
 
     return results

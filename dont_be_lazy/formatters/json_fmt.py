@@ -9,7 +9,7 @@ from typing import Any
 from dont_be_lazy.models import Suppression
 
 
-def _sup_to_dict(s: Suppression) -> dict[str, Any]:
+def sup_to_dict(s: Suppression) -> dict[str, Any]:
     """Serialize one suppression to a JSON-safe dictionary."""
     doc: dict[str, Any] = {
         "id": s.id,
@@ -58,11 +58,11 @@ def format_json(findings: list[Suppression], root: str = "") -> str:
             "total": len(findings),
             "by_tool": by_tool,
         },
-        "findings": [_sup_to_dict(s) for s in findings],
+        "findings": [sup_to_dict(s) for s in findings],
     }
     return json.dumps(doc, indent=2)
 
 
 def format_jsonl(findings: list[Suppression]) -> str:
     """Format findings as newline-delimited JSON."""
-    return "\n".join(json.dumps(_sup_to_dict(s)) for s in findings) + ("\n" if findings else "")
+    return "\n".join(json.dumps(sup_to_dict(s)) for s in findings) + ("\n" if findings else "")

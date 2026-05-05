@@ -8,7 +8,7 @@ from typing import Any
 from dont_be_lazy.models import ScopeKind, Suppression
 
 # Per-tool review prompts
-_REVIEW_PROMPTS: dict[str, list[str]] = {
+REVIEW_PROMPTS: dict[str, list[str]] = {
     "ruff": [
         "Can the code be changed to satisfy the rule?",
         "Is the rule still enabled in the current config?",
@@ -92,14 +92,15 @@ _REVIEW_PROMPTS: dict[str, list[str]] = {
     ],
 }
 
-_DEFAULT_PROMPTS = [
+DEFAULT_PROMPTS = [
     "Is this suppression still necessary?",
     "Is there a reason or issue link?",
     "Can the underlying issue be fixed instead of suppressed?",
 ]
 
 
-def _why_suppression(s: Suppression) -> str:
+def why_suppression(s: Suppression) -> str:
+    """Return a human-readable description of why a suppression exists."""
     kind_descriptions = {
         "noqa-blanket": "suppresses all linting rules on this line without specifying which.",
         "noqa-specific": "suppresses specific linting error code(s) on this line.",
@@ -130,7 +131,8 @@ def _why_suppression(s: Suppression) -> str:
     return f"This {desc}"
 
 
-def _scope_explanation(s: Suppression) -> str:
+def scope_explanation(s: Suppression) -> str:
+    """Return a human-readable explanation of the suppression's scope."""
     scope_text = {
         ScopeKind.line: "Affects only this line.",
         ScopeKind.next_line: "Affects the next line only.",
@@ -145,7 +147,8 @@ def _scope_explanation(s: Suppression) -> str:
     return scope_text.get(s.scope, f"Scope: {s.scope.value}")
 
 
-def _risk_rationale(s: Suppression) -> str:
+def risk_rationale(s: Suppression) -> str:
+    """Return a human-readable explanation of the risk scoring for a suppression."""
     parts = []
     if "blanket-suppression" in s.flags or not s.codes:
         parts.append("No specific code — blanket suppression.")
@@ -164,7 +167,7 @@ def _risk_rationale(s: Suppression) -> str:
 
 def explain_suppression(s: Suppression) -> str:
     """Render a human-readable explanation for a single suppression."""
-    prompts = _REVIEW_PROMPTS.get(s.tool, _DEFAULT_PROMPTS)
+    prompts = REVIEW_PROMPTS.get(s.tool, DEFAULT_PROMPTS)
 
     lines = [
         f"{s.path}:{s.line}",
@@ -186,11 +189,11 @@ def explain_suppression(s: Suppression) -> str:
         [
             "",
             "Why:",
-            f"  {_why_suppression(s)}",
-            f"  {_scope_explanation(s)}",
+            f"  {why_suppression(s)}",
+            f"  {scope_explanation(s)}",
             "",
             "Risk rationale:",
-            f"  {_risk_rationale(s)}",
+            f"  {risk_rationale(s)}",
             "",
             "Review:",
         ]
@@ -217,9 +220,9 @@ def explain_suppression_json(s: Suppression) -> dict[str, Any]:
             "flags": s.flags,
             "text": s.text,
         },
-        "why": _why_suppression(s),
-        "risk_rationale": _risk_rationale(s),
-        "review": _REVIEW_PROMPTS.get(s.tool, _DEFAULT_PROMPTS),
+        "why": why_suppression(s),
+        "risk_rationale": risk_rationale(s),
+        "review": REVIEW_PROMPTS.get(s.tool, DEFAULT_PROMPTS),
         "blanket": not bool(s.codes) or "blanket-ignore" in s.flags,
         "code_specific": bool(s.codes),
     }

@@ -9,7 +9,7 @@ from dont_be_lazy.commands.stale_cmd import attach_blame, filter_stale, format_s
 from dont_be_lazy.models import RiskLevel, ScopeKind, Suppression
 
 
-def _suppression(**kwargs) -> Suppression:
+def suppression(**kwargs) -> Suppression:
     defaults: dict[str, Any] = {
         "tool": "ruff",
         "kind": "noqa-blanket",
@@ -35,7 +35,7 @@ def test_parse_age_supports_days_months_and_years() -> None:
 
 
 def test_attach_blame_prefers_baseline(monkeypatch) -> None:
-    finding = _suppression()
+    finding = suppression()
     baseline = {finding.fingerprint(): "2023-01-01"}
 
     annotated = attach_blame([finding], "C:\\repo", baseline=baseline)
@@ -51,16 +51,16 @@ def test_attach_blame_uses_git_blame_when_requested(monkeypatch) -> None:
     )
     monkeypatch.setattr("dont_be_lazy.git.first_seen_by_log", lambda path, text, root: None)
 
-    finding = attach_blame([_suppression()], "C:\\repo", with_git_blame=True)[0]
+    finding = attach_blame([suppression()], "C:\\repo", with_git_blame=True)[0]
 
     assert finding.git_author == "Jane"
     assert finding.first_seen == "2024-01-01"
 
 
 def test_filter_stale_excludes_unknown_when_requested() -> None:
-    old = _suppression()
+    old = suppression()
     old.first_seen = "2023-01-01"
-    unknown = _suppression(line=4, text="other = 2  # noqa")
+    unknown = suppression(line=4, text="other = 2  # noqa")
 
     stale = filter_stale([old, unknown], 180, include_unknown=False)
 
@@ -68,7 +68,7 @@ def test_filter_stale_excludes_unknown_when_requested() -> None:
 
 
 def test_format_stale_outputs_owner_and_json() -> None:
-    finding = _suppression()
+    finding = suppression()
     finding.first_seen = "2023-01-01"
     finding.owner = "team-qa"
 
