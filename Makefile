@@ -318,3 +318,18 @@ check-ci: format-check lint-check security test-ci typecheck metadata-check vers
 
 prerelease: check dev-status docs-check smoke spell publish-check
 	@echo "Pre-release checks complete — ready to publish."
+
+# ── Dogfooding targets (independent, not wired into check) ───────────────────
+
+.PHONY: prerelease-check
+prerelease-check: version-check dev-status
+	@echo "Pre-release checks passed."
+
+.PHONY: dont-be-lazy
+dont-be-lazy:
+	@$(UV) dont_be_lazy --root . --no-color summary
+	@$(UV) dont_be_lazy --root . --no-color scan dont_be_lazy --no-config-suppressions || true
+
+.PHONY: pydoc-docs
+pydoc-docs:
+	@$(UV) pydoc_fork dont_be_lazy -o ./pydoc/
