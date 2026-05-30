@@ -114,3 +114,11 @@ MIT — see [LICENSE](https://github.com/matthewdeanmartin/dont_be_lazy/blob/mai
 ## Changelog
 
 See [CHANGELOG.md](https://github.com/matthewdeanmartin/dont_be_lazy/blob/main/CHANGELOG.md).
+
+## Project Links
+
+- [GitHub](https://github.com/matthewdeanmartin/dont_be_lazy)
+- [PyPI](https://pypi.org/project/dont-be-lazy/)
+- [Documentation](https://dont-be-lazy.readthedocs.io/en/latest/)
+- [Bug Tracker](https://github.com/matthewdeanmartin/dont_be_lazy/issues)
+- [Change Log](https://github.com/matthewdeanmartin/dont_be_lazy/blob/main/CHANGELOG.md)
