@@ -49,7 +49,7 @@ include = ["/README.md", "LICENSE", "/dont_be_lazy", "/tests"]
 [dependency-groups]
 dev = [
     "pydoc-fork>=3.0.0",
-    "keepachangelog-manager-fork>=6.1.1,<7",
+    "keepachangelog-manager-fork[all]>=6.5.0",
 
 
     # formatters
