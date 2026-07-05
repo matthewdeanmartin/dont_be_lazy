@@ -63,7 +63,7 @@ dev = [
     "jiggle-version>=2.1.0",
     "codespell>=2.4.1",
 
-    "metametameta==0.1.12",
+    "metametameta>=0.1.14",
     "pylint[spelling]>=4.0.0",
     "ruff>=0.12.0",
     "troml-dev-status>=0.6.0",

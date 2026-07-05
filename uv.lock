@@ -9,9 +9,6 @@ resolution-markers = [
     "python_full_version < '3.11'",
 ]
 
-[options]
-exclude-newer = "2026-07-02T13:17:36Z"
-
 [[package]]
 name = "aiohappyeyeballs"
 version = "2.7.1"
@@ -1033,7 +1030,7 @@ dev = [
     { name = "keepachangelog-manager-fork", extras = ["all"], specifier = ">=6.5.0" },
     { name = "linkcheckmd", specifier = ">=1.4.0" },
     { name = "mdformat", specifier = ">=1.0.0" },
-    { name = "metametameta", specifier = "==0.1.12" },
+    { name = "metametameta", specifier = ">=0.1.14" },
     { name = "mkdocs", specifier = ">=1.6.0" },
     { name = "mkdocstrings", extras = ["python"], specifier = ">=0.26.0" },
     { name = "mypy", specifier = ">=1.18.0" },
@@ -2241,7 +2238,7 @@ wheels = [
 
 [[package]]
 name = "metametameta"
-version = "0.1.12"
+version = "0.1.14"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "colorlog" },
@@ -2249,9 +2246,9 @@ dependencies = [
     { name = "toml" },
     { name = "totalhelp" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b9/80/86e9ce1d90cde9b4574ceea3ff3dce647a074f69ec95b599e982615bb706/metametameta-0.1.12.tar.gz", hash = "sha256:950c34000e4ac95cac103aa3a9a7bca4fffc32c33506899be2b182702c25cdf5", size = 32792, upload-time = "2026-05-04T18:26:27.941Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/6a/e1/3adee847a9f0e8ad19d2b97adde18e1dc45883b1007000b2a23503d9b7c5/metametameta-0.1.14.tar.gz", hash = "sha256:a76d81383bd1c159fd12ddb3d3af45236bfd48a90c9f617debe293bcbe4ec03b", size = 35054, upload-time = "2026-07-04T21:28:41.981Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/00/02/b58e4f8543a15be65f8e9f7efe5b93b85a04ba00a45c575006c331beef62/metametameta-0.1.12-py3-none-any.whl", hash = "sha256:4803c2f957e8a3ab0249ab466637c2053ff6126cc1e2f47c6273b33329f7ea60", size = 41342, upload-time = "2026-05-04T18:26:26.271Z" },
+    { url = "https://files.pythonhosted.org/packages/32/be/9fb9be93101ce71458652f16e71d12797f7747858007e117e6d5916e5b92/metametameta-0.1.14-py3-none-any.whl", hash = "sha256:fde0ce2c2ac41b6e335e049526a8af496e7b2748cd12e6456d031515a00398df", size = 43491, upload-time = "2026-07-04T21:28:40.626Z" },
 ]
 
 [[package]]
