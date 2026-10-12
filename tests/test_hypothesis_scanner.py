@@ -19,14 +19,14 @@ def test_suppress_health_check():
 
 
 def test_deadline_none():
-    source = "from hypothesis import settings\n" "@settings(deadline=None)\n" "def test_foo(): pass\n"
+    source = "from hypothesis import settings\n@settings(deadline=None)\ndef test_foo(): pass\n"
     findings = scan(source)
     f = next((s for s in findings if s.tool == "hypothesis" and s.kind == "deadline-none"), None)
     assert f is not None
 
 
 def test_deadline_with_value_not_flagged():
-    source = "from hypothesis import settings\n" "@settings(deadline=500)\n" "def test_foo(): pass\n"
+    source = "from hypothesis import settings\n@settings(deadline=500)\ndef test_foo(): pass\n"
     findings = scan(source)
     hypothesis_findings = [s for s in findings if s.tool == "hypothesis"]
     assert not any(s.kind == "deadline-none" for s in hypothesis_findings)

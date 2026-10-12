@@ -6,14 +6,13 @@ readme = "README.md"
 authors = [{ name = "Matthew Martin", email = "matthewdeanmartin@gmail.com" }]
 keywords = ["dont_be_lazy"]
 license = "MIT"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.14",
@@ -99,7 +98,7 @@ dev = [
     "pyenchant>=3.2.2",
     "mkdocs>=1.6.0,<2",
     "mkdocstrings[python]>=0.26.0",
-    "pydoclint>=0.8.0; python_version >= '3.10'",
+    "pydoclint>=0.8.0",
     "pydoctest==0.2.1",
     # llm export
     "git2md>=0.1.0",
@@ -111,8 +110,8 @@ dev = [
     "griffe>=1.0.0",
 
     # advisory / exploratory tools (standalone make targets, not quality gates)
-    "refurb>=2.0.0; python_version >= '3.10'",
-    "crosshair-tool>=0.0.80; python_version >= '3.10'",
+    "refurb>=2.0.0",
+    "crosshair-tool>=0.0.80",
     "deptry>=0.20.0",
     "import-linter>=2.0",
 ]
@@ -137,7 +136,7 @@ junit_family = "xunit1"
 
 [tool.black]
 line-length = 120
-target-version = ["py310"]
+target-version = ["py311"]
 include = '\.pyi?$'
 exclude = '''
 (
@@ -163,7 +162,7 @@ py_version = 310
 skip_gitignore = true
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.11"
 strict = true
 packages = ["dont_be_lazy", "tests"]
 
@@ -175,7 +174,7 @@ disallow_untyped_calls = false
 
 [tool.ruff]
 line-length = 120
-target-version = "py310"
+target-version = "py311"
 
 [tool.ruff.lint]
 select = [
@@ -187,7 +186,7 @@ select = [
     "RUF", # ruff-specific
     "W",   # pycodestyle warnings
 ]
-ignore = [
+ignore = ["RUF100", "UP042", 
     "E501",   # line too long (black handles this)
     "UP007",  # use X | Y for union (3.9 compat)
 ]

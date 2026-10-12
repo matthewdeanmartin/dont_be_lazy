@@ -726,8 +726,7 @@ def run_baseline(args: argparse.Namespace, root: str) -> int:
                     save_baseline(pruned, output_path)
                     if not args.quiet:
                         print(
-                            f"Pruned {len(removed)} resolved entries; "
-                            f"{len(pruned['entries'])} remain → {output_path}"
+                            f"Pruned {len(removed)} resolved entries; {len(pruned['entries'])} remain → {output_path}"
                         )
                     exit_code = 0
 
