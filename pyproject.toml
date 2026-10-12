@@ -90,7 +90,6 @@ dev = [
     # gha
     # gha-update and troml-dev-status require the HTTPX 0.x API.
     # https://github.com/davidism/gha-update/issues/39
-    "httpx<1",
     "gha-update>=0.1.0; python_version >= '3.12'",
     "pyyaml>=6.0",
 
@@ -119,6 +118,8 @@ dev = [
 ]
 
 [tool.uv]
+# Compatibility constraint for third-party tools; this project does not use HTTPX directly.
+constraint-dependencies = ["httpx<1"]
 default-groups = ["dev"]
 
 [tool.uv.pip]
