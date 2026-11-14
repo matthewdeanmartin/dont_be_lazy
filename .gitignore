@@ -54,6 +54,9 @@ dmypy.json
 
 # Docs
 site/
+/landing/public/
+/landing/resources/
+/landing/.hugo_build.lock
 docs/_build/
 
 # Build history

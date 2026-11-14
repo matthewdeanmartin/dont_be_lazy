@@ -59,7 +59,7 @@ help:
 	@echo "  docs-check             All doc checks (docstrings + links + pydoctest)"
 	@echo "  docs-check-docstrings  interrogate docstring coverage"
 	@echo "  docs-check-pydoctest   pydoctest docstring example tests"
-	@echo "  docs-check-links       linkcheckMarkdown"
+	@echo "  docs-check-links       local Markdown links"
 	@echo "  griffe                 griffe API surface check (advisory)"
 	@echo "  build-docs             Build mkdocs documentation"
 	@echo ""
@@ -157,7 +157,7 @@ docs-check-pydoctest:
 		| grep -v "__init__" | grep -v "__main__" | grep -v "Unable to parse" || true
 
 docs-check-links:
-	@$(UV) run linkcheckMarkdown README.md || true
+	@$(UV) run python -X utf8 scripts/check_local_links.py README.md docs
 	@$(UV) run mdformat --check README.md CHANGELOG.md docs/*.md || true
 
 griffe:

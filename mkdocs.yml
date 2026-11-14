@@ -1,6 +1,6 @@
 ---
 site_name: dont_be_lazy
-site_url: https://dont_be_lazy.readthedocs.io/
+site_url: https://dont-be-lazy.readthedocs.io/
 site_author: Matthew Martin <matthewdeanmartin@gmail.com>
 site_description: Tool that finds evidence of past skipped linting
 repo_url: https://github.com/matthewdeanmartin/dont_be_lazy

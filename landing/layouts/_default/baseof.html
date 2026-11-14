@@ -1,0 +1,8 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f1ede3"><title>Dont Be Lazy — review the exceptions you left behind</title>
+<meta name="description" content="{{ .Site.Params.description }}">
+<meta property="og:type" content="website"><meta property="og:title" content="Dont Be Lazy — review the exceptions you left behind">
+<meta property="og:description" content="{{ .Site.Params.description }}"><meta property="og:url" content="{{ .Site.BaseURL }}">
+{{ $css := resources.Get "css/site.css" | minify | fingerprint }}<link rel="stylesheet" href="{{ $css.RelPermalink }}">
+</head><body>{{ block "main" . }}{{ end }}</body></html>

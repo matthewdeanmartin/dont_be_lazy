@@ -1,0 +1,3 @@
+---
+title: Dont Be Lazy
+---

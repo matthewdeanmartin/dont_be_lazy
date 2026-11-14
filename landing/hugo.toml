@@ -1,0 +1,10 @@
+baseURL = "https://matthewdeanmartin.github.io/dont_be_lazy/"
+locale = "en-us"
+title = "Dont Be Lazy"
+disableKinds = ["taxonomy", "term", "RSS"]
+
+[params]
+  description = "Find forgotten lint, type, test, security, and formatting suppressions in a repository."
+  docs = "https://dont-be-lazy.readthedocs.io/en/latest/"
+  github = "https://github.com/matthewdeanmartin/dont_be_lazy"
+  pypi = "https://pypi.org/project/dont-be-lazy/"

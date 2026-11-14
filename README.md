@@ -118,6 +118,7 @@ See [CHANGELOG.md](https://github.com/matthewdeanmartin/dont_be_lazy/blob/main/C
 ## Project Links
 
 - [GitHub](https://github.com/matthewdeanmartin/dont_be_lazy)
+- [Homepage](https://matthewdeanmartin.github.io/dont_be_lazy/)
 - [PyPI](https://pypi.org/project/dont-be-lazy/)
 - [Documentation](https://dont-be-lazy.readthedocs.io/en/latest/)
 - [Bug Tracker](https://github.com/matthewdeanmartin/dont_be_lazy/issues)
